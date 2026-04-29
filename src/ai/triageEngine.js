@@ -19,6 +19,8 @@ export async function initModel() {
   // Convert to object URL to avoid excessive RAM overhead
   const modelBlob = await cachedResponse.blob()
   const blobUrl = URL.createObjectURL(modelBlob)
+  
+  const startTime = Date.now()
 
   try {
     // Resolve WASM binaries
@@ -31,9 +33,17 @@ export async function initModel() {
       baseOptions: {
         modelAssetPath: blobUrl,
       },
-      maxTokens: 256,
+      maxTokens: 200,
       topK: 1,
+      temperature: 0.1,
+      randomSeed: 1,
     })
+
+    // Warmup call to prevent first-run latency
+    await llmInference.generateResponse('Return this JSON: {color: GREEN, action: test}')
+
+    const loadTime = ((Date.now() - startTime) / 1000).toFixed(2)
+    console.log(`Model loaded in ${loadTime}s`)
 
     isModelLoaded = true
   } finally {
@@ -47,24 +57,22 @@ export async function analyzePatient(transcript) {
     throw new Error('Model is not initialized yet.')
   }
 
-  const systemPrompt = `You are a medical triage assistant in a disaster zone. 
-Follow the START protocol strictly. The responder will 
-describe a patient. Return ONLY this JSON, nothing else:
-{
-  "color": "RED" or "YELLOW" or "GREEN" or "BLACK",
-  "action": "maximum 10 words telling responder what to do",
-  "reasoning": "one sentence clinical explanation",
-  "confidence": "high" or "medium" or "low"
-}
-RED = life threatening but survivable, treat immediately.
-YELLOW = serious but stable, can wait.
-GREEN = minor injuries, walking wounded.
-BLACK = deceased or unsurvivable injuries.`
+  const systemPrompt = `You are a triage assistant. Output JSON only. No other text.
 
-  const userPrompt = `Patient description: ${transcript}`
+Rules:
+- If patient is walking and talking: {"color":"GREEN","action":"Walking wounded, move to green area","reasoning":"Patient ambulatory","confidence":"high"}
+- If patient is not breathing after airway repositioned: {"color":"BLACK","action":"Do not resuscitate, move on","reasoning":"Unsurvivable","confidence":"high"}  
+- If breathing over 30 per minute or under 10: {"color":"RED","action":"[specific action for this patient]","reasoning":"Respiratory compromise","confidence":"high"}
+- If no radial pulse or capillary refill over 2 seconds: {"color":"RED","action":"[specific action]","reasoning":"Circulatory compromise","confidence":"high"}
+- If cannot follow commands: {"color":"RED","action":"[specific action]","reasoning":"Altered mental status","confidence":"high"}
+- Otherwise: {"color":"YELLOW","action":"[specific action]","reasoning":"Stable","confidence":"medium"}
+
+Patient description: ${transcript}
+
+Respond with JSON only:`
 
   // Format using Gemma's turn-based chat template
-  const formattedPrompt = `<start_of_turn>user\n${systemPrompt}\n\n${userPrompt}<end_of_turn>\n<start_of_turn>model\n`
+  const formattedPrompt = `<start_of_turn>user\n${systemPrompt}<end_of_turn>\n<start_of_turn>model\n`
 
   try {
     const response = await llmInference.generateResponse(formattedPrompt)

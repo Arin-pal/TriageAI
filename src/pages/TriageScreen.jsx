@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import WorkerHeader from '../components/WorkerHeader'
 import WorkerBottomNav from '../components/WorkerBottomNav'
+import CameraPermission from '../components/CameraPermission'
 import { useAI } from '../context/AIContext'
 import { analyzePatient } from '../ai/triageEngine'
 import './TriageScreen.css'
@@ -12,6 +13,9 @@ export default function TriageScreen() {
   const recognitionRef = useRef(null)
   const navigate = useNavigate()
   const { isModelLoaded } = useAI()
+
+  const [hasPermission, setHasPermission] = useState(false)
+  const activeStreamRef = useRef(null)
 
   const [capturedImage, setCapturedImage] = useState(null)
   const [transcript, setTranscript] = useState('')
@@ -44,29 +48,30 @@ export default function TriageScreen() {
 
   // Initialize camera
   useEffect(() => {
-    let activeStream = null
-    async function initCamera() {
-      if (isDemoMode) return // Bypass camera in demo mode
-      try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        })
-        activeStream = mediaStream
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream
-        }
-      } catch (err) {
-        console.error('Failed to access camera:', err)
-      }
+    if (isDemoMode) {
+      setHasPermission(true)
     }
-    initCamera()
 
     return () => {
-      if (activeStream) {
-        activeStream.getTracks().forEach(track => track.stop())
+      if (activeStreamRef.current) {
+        activeStreamRef.current.getTracks().forEach(track => track.stop())
       }
     }
-  }, [])
+  }, [isDemoMode])
+
+  const handleCameraGranted = (stream) => {
+    activeStreamRef.current = stream
+    setHasPermission(true)
+    // The video element might not be rendered yet, so we use a small timeout or just let a standard useEffect pick up the stream. 
+    // Since we transition state to hasPermission=true, the video will mount on next render.
+  }
+
+  // Bind stream to video once it renders
+  useEffect(() => {
+    if (hasPermission && videoRef.current && activeStreamRef.current && !isDemoMode) {
+      videoRef.current.srcObject = activeStreamRef.current
+    }
+  }, [hasPermission, isDemoMode])
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -178,7 +183,10 @@ export default function TriageScreen() {
     <div className="worker-page-container">
       <WorkerHeader />
       
-      <main className="camera-main page-enter">
+      {!hasPermission ? (
+        <CameraPermission onGranted={handleCameraGranted} />
+      ) : (
+        <main className="camera-main page-enter">
         <div className="camera-view">
           {/* Live rear camera feed or Demo Block */}
           {isDemoMode ? (
@@ -264,6 +272,7 @@ export default function TriageScreen() {
           </div>
         )}
       </main>
+      )}
 
       <WorkerBottomNav />
     </div>

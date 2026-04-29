@@ -15,6 +15,26 @@ import Settings from './pages/Settings'
 export default function App() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
   const [showSplash, setShowSplash] = useState(true)
+  const [cameraDenied, setCameraDenied] = useState(false)
+
+  useEffect(() => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'camera' })
+        .then((permissionStatus) => {
+          if (permissionStatus.state === 'denied') {
+            setCameraDenied(true)
+          }
+          permissionStatus.onchange = () => {
+            if (permissionStatus.state === 'denied') {
+              setCameraDenied(true)
+            } else {
+              setCameraDenied(false)
+            }
+          }
+        })
+        .catch(console.warn)
+    }
+  }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 1500)
@@ -47,6 +67,21 @@ export default function App() {
         <h1 style={{ fontSize: '3.5rem', color: '#CC0000', margin: 0, fontWeight: 900, fontFamily: 'system-ui, -apple-system, sans-serif', animation: 'heartbeat 1.5s infinite ease-in-out' }}>
           TriageAI
         </h1>
+      </div>
+    )
+  }
+
+  if (cameraDenied) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: '#0a0a0a', padding: '24px', textAlign: 'center' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🚫</div>
+        <h2 style={{ color: '#CC0000', marginBottom: '16px' }}>Camera Blocked</h2>
+        <p style={{ color: '#ccc', marginBottom: '24px' }}>
+          TriageAI requires camera access to function. You have blocked camera access for this site.
+        </p>
+        <p style={{ color: '#ccc' }}>
+          Please go to <strong>Chrome Settings &rarr; Site Settings &rarr; Camera</strong> and allow access, then refresh the page.
+        </p>
       </div>
     )
   }
