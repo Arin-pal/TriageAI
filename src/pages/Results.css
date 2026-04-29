@@ -1,0 +1,106 @@
+.results-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-bottom: 40px;
+}
+
+.results-header {
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.results-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 20px 0;
+}
+
+/* ---------- Verdict ---------- */
+.verdict-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-color: var(--verdict-color, var(--color-border));
+  box-shadow: 0 0 24px color-mix(in srgb, var(--verdict-color, transparent) 20%, transparent);
+}
+
+.verdict-icon { font-size: 2.5rem; }
+
+.verdict-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.verdict-label {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+}
+
+/* ---------- Advice ---------- */
+.advice-text {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+}
+
+/* ---------- Symptoms card ---------- */
+.symptoms-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.symptoms-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.symptoms-text {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.severity-badge {
+  align-self: flex-start;
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---------- Actions ---------- */
+.results-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.disclaimer {
+  font-size: 0.775rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.5;
+  border-top: 1px solid var(--color-border);
+  padding-top: 20px;
+}

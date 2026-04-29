@@ -1,0 +1,191 @@
+/* =====================================================================
+   TriageAI – Global Design System
+   ===================================================================== */
+
+/* -- Fonts -- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+
+/* -- Design Tokens -- */
+:root {
+  --color-brand:        #CC0000;
+  --color-brand-light:  #ff2222;
+  --color-brand-dark:   #990000;
+  --color-bg:           #0a0a0a;
+  --color-surface:      #141414;
+  --color-surface-2:    #1e1e1e;
+  --color-border:       rgba(255,255,255,0.08);
+  --color-text:         #f0f0f0;
+  --color-text-muted:   #888;
+  --color-success:      #22c55e;
+  --color-warning:      #f59e0b;
+  --color-danger:       #ef4444;
+
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  20px;
+  --radius-xl:  32px;
+
+  --shadow-glow: 0 0 40px rgba(204,0,0,0.25);
+  --shadow-card: 0 4px 32px rgba(0,0,0,0.5);
+
+  --font-heading: 'Outfit', sans-serif;
+  --font-body:    'Inter', sans-serif;
+
+  --transition: 0.22s ease;
+}
+
+/* -- Reset -- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: sans-serif;
+  background-color: #0a0a0a;
+  color: white;
+  line-height: 1.6;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -- Typography -- */
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  line-height: 1.15;
+}
+
+a {
+  color: var(--color-brand-light);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover { color: #fff; }
+
+/* -- Tap Targets -- */
+button, a, input, select, textarea, [role="button"], [role="radio"], [role="checkbox"] {
+  min-height: 56px;
+  min-width: 56px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* -- Layout utilities -- */
+.container {
+  width: 100%;
+  max-width: 480px;   /* mobile-first portrait */
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+/* -- Card -- */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+/* -- Buttons -- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-dark));
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(204,0,0,0.4);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(204,0,0,0.55);
+}
+
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-outline:hover {
+  background: var(--color-surface-2);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.btn-full { width: 100%; }
+
+/* -- Offline banner -- */
+.offline-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-warning);
+  color: #000;
+  text-align: center;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  z-index: 9999;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* -- Page fade-in -- */
+.page-enter {
+  animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* -- Pulse loader -- */
+.pulse-ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid var(--color-brand);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.2); opacity: 0.5; }
+}

@@ -1,0 +1,107 @@
+.triage-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-bottom: 40px;
+}
+
+.triage-header {
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.back-link {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.back-link:hover { color: var(--color-text); }
+
+.triage-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+/* ---------- Form ---------- */
+.triage-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px 20px 0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.form-textarea {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 14px 16px;
+  resize: vertical;
+  min-height: 130px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+.form-textarea::placeholder { color: var(--color-text-muted); }
+
+.form-textarea:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(204,0,0,0.15);
+}
+
+/* ---------- Severity chips ---------- */
+.severity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.severity-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+}
+
+.severity-chip:hover { border-color: rgba(255,255,255,0.25); }
+
+.severity-chip.active.severity-mild     { border-color: var(--color-success); background: rgba(34,197,94,0.12);  color: var(--color-success); }
+.severity-chip.active.severity-moderate { border-color: var(--color-warning); background: rgba(245,158,11,0.12); color: var(--color-warning); }
+.severity-chip.active.severity-severe   { border-color: #f97316; background: rgba(249,115,22,0.12); color: #f97316; }
+.severity-chip.active.severity-critical { border-color: var(--color-danger);  background: rgba(239,68,68,0.12);  color: var(--color-danger); }
+
+/* screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}

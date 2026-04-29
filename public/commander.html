@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TriageAI Commander</title>
+  <style>
+    :root {
+      --color-bg: #0a0a0a;
+      --color-surface: #1a1a1a;
+      --color-border: #333333;
+      --color-text: #ffffff;
+      --color-text-muted: #a0a0a0;
+      
+      --color-red: #CC0000;
+      --color-yellow: #E6A817;
+      --color-green: #1A7A1A;
+      --color-black: #222222;
+      --color-blue: #0055CC;
+    }
+
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    header {
+      background-color: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 20px 32px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .summary-stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .bg-red { background-color: var(--color-red); }
+    .bg-yellow { background-color: var(--color-yellow); color: #000; text-shadow: none; }
+    .bg-green { background-color: var(--color-green); }
+    .bg-black { background-color: var(--color-black); border: 1px solid #444; }
+    .bg-blue { background-color: var(--color-blue); }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    button {
+      background: var(--color-surface);
+      color: white;
+      border: 1px solid var(--color-border);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #333;
+    }
+
+    .btn-danger {
+      border-color: var(--color-red);
+      color: var(--color-red);
+    }
+    
+    .btn-danger:hover {
+      background: rgba(204,0,0,0.1);
+    }
+
+    main {
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 48px;
+    }
+
+    .card {
+      background: var(--color-surface);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-left: 6px solid #444;
+    }
+
+    .border-red { border-left-color: var(--color-red); }
+    .border-yellow { border-left-color: var(--color-yellow); }
+    .border-green { border-left-color: var(--color-green); }
+    .border-black { border-left-color: var(--color-black); }
+    .border-blue { border-left-color: var(--color-blue); }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin: 0 0 8px 0;
+      line-height: 1.3;
+    }
+
+    .card-text {
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+      margin: 0 0 16px 0;
+      line-height: 1.4;
+    }
+
+    .card-meta {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #888;
+      background: rgba(255,255,255,0.05);
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .assign-select {
+      width: 100%;
+      background: #111;
+      color: white;
+      border: 1px solid var(--color-border);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-top: auto;
+    }
+
+    .assign-select:focus {
+      outline: none;
+      border-color: var(--color-blue);
+    }
+
+    .volunteer-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .skill-tag {
+      background: rgba(0, 85, 204, 0.2);
+      color: #60a5fa;
+      padding: 4px 8px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid rgba(0, 85, 204, 0.3);
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>TriageAI Commander</h1>
+    
+    <div class="summary-stats">
+      <div class="stat-badge bg-red" id="count-red">RED: 0</div>
+      <div class="stat-badge bg-yellow" id="count-yellow">YELLOW: 0</div>
+      <div class="stat-badge bg-green" id="count-green">GREEN: 0</div>
+      <div class="stat-badge bg-black" id="count-black">BLACK: 0</div>
+      <div class="stat-badge bg-blue" id="count-volunteers">VOLUNTEERS: 0</div>
+    </div>
+
+    <div class="controls">
+      <label class="toggle-container">
+        <input type="checkbox" id="auto-refresh" checked>
+        Auto-Refresh (5s)
+      </label>
+      <button class="btn-danger" id="btn-clear">Clear All Data</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="section-title">
+      Reported Patients (<span id="total-patients">0</span>)
+      <span style="font-size: 0.85rem; color: #888; font-weight: 500;" id="last-updated"></span>
+    </div>
+    <div class="grid" id="patients-grid">
+      <!-- Generated via JS -->
+    </div>
+
+    <div class="section-title" style="margin-top: 56px;">
+      Available Volunteers (<span id="total-volunteers-list">0</span>)
+    </div>
+    <div class="grid" id="volunteers-grid">
+      <!-- Generated via JS -->
+    </div>
+  </main>
+
+  <script>
+    const elPatientsGrid = document.getElementById('patients-grid');
+    const elVolunteersGrid = document.getElementById('volunteers-grid');
+    const elAutoRefresh = document.getElementById('auto-refresh');
+    const elBtnClear = document.getElementById('btn-clear');
+    
+    let refreshInterval = null;
+
+    function formatTimeAgo(timestamp) {
+      if (!timestamp) return 'Unknown';
+      const diff = Date.now() - timestamp;
+      const sec = Math.floor(diff / 1000);
+      if (sec < 60) return `${sec}s ago`;
+      const min = Math.floor(sec / 60);
+      if (min < 60) return `${min}m ago`;
+      const hr = Math.floor(min / 60);
+      return `${hr}h ago`;
+    }
+
+    function render() {
+      let patients = [];
+      let volunteers = [];
+      
+      try {
+        const pData = localStorage.getItem('triage_patients');
+        if (pData) patients = JSON.parse(pData);
+        
+        const vData = localStorage.getItem('volunteers');
+        if (vData) volunteers = JSON.parse(vData);
+      } catch(e) {
+        console.error("Local storage parse error", e);
+      }
+
+      // Sort by newest first
+      patients.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      volunteers.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      // Calculate Patient Counts
+      let counts = { RED: 0, YELLOW: 0, GREEN: 0, BLACK: 0 };
+      patients.forEach(p => {
+        const c = (p.color || 'UNKNOWN').toUpperCase();
+        if (counts[c] !== undefined) counts[c]++;
+      });
+
+      // Update DOM Badges
+      document.getElementById('count-red').textContent = `RED: ${counts.RED}`;
+      document.getElementById('count-yellow').textContent = `YELLOW: ${counts.YELLOW}`;
+      document.getElementById('count-green').textContent = `GREEN: ${counts.GREEN}`;
+      document.getElementById('count-black').textContent = `BLACK: ${counts.BLACK}`;
+      document.getElementById('count-volunteers').textContent = `VOLUNTEERS: ${volunteers.length}`;
+      
+      document.getElementById('total-patients').textContent = patients.length;
+      document.getElementById('total-volunteers-list').textContent = volunteers.length;
+      
+      const now = new Date();
+      document.getElementById('last-updated').textContent = `Last synced: ${now.toLocaleTimeString()}`;
+
+      // Build Volunteer Option list for the Assignment Dropdowns
+      let volOptions = `<option value="">-- Assign a Volunteer --</option>`;
+      volunteers.forEach(v => {
+        const skillsStr = (v.skills || []).join(', ');
+        const label = `Vol-${(v.id || '').substring(0,4)} (${skillsStr})`;
+        volOptions += `<option value="${v.id}">${label}</option>`;
+      });
+
+      // Render Patients Grid
+      elPatientsGrid.innerHTML = '';
+      if (patients.length === 0) {
+        elPatientsGrid.innerHTML = '<div style="color: #888;">No patients reported yet.</div>';
+      } else {
+        patients.forEach(p => {
+          const colorKey = (p.color || 'UNKNOWN').toLowerCase();
+          const latlng = (p.lat && p.lng) ? `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}` : 'No GPS Available';
+          const modeStr = (p.mode || 'AI').toUpperCase();
+          
+          const card = document.createElement('div');
+          card.className = `card border-${colorKey}`;
+          card.innerHTML = `
+            <div class="card-header">
+              <span class="stat-badge bg-${colorKey}" style="padding: 4px 8px; font-size: 0.75rem;">${(p.color || 'UNKNOWN').toUpperCase()}</span>
+              <span style="color: #888; font-size: 0.8rem; font-weight: 600;">${formatTimeAgo(p.timestamp)}</span>
+            </div>
+            <h3 class="card-title">${p.action || 'No action defined'}</h3>
+            <p class="card-text">${p.reasoning || ''}</p>
+            <div class="card-meta">
+              📍 ${latlng} <br>
+              📡 SOURCE: ${modeStr}
+            </div>
+            <select class="assign-select" onchange="assignVolunteer('${p.id}', this.value)">
+              ${volOptions}
+            </select>
+          `;
+          
+          // Pre-fill selection if previously assigned
+          if (p.assignedVolunteerId) {
+            const sel = card.querySelector('select');
+            sel.value = p.assignedVolunteerId;
+          }
+
+          elPatientsGrid.appendChild(card);
+        });
+      }
+
+      // Render Volunteers Grid
+      elVolunteersGrid.innerHTML = '';
+      if (volunteers.length === 0) {
+        elVolunteersGrid.innerHTML = '<div style="color: #888;">No volunteers available yet.</div>';
+      } else {
+        volunteers.forEach(v => {
+          const latlng = (v.lat && v.lng) ? `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}` : 'No GPS Available';
+          const skillsHtml = (v.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('');
+          
+          const card = document.createElement('div');
+          card.className = 'card border-blue';
+          card.innerHTML = `
+            <div class="card-header">
+              <span style="font-weight: 800;">Volunteer #${(v.id || 'XXXX').substring(0,4)}</span>
+              <span style="color: #888; font-size: 0.8rem; font-weight: 600;">${formatTimeAgo(v.timestamp)}</span>
+            </div>
+            <div class="volunteer-skills">
+              ${skillsHtml || '<span style="color:#888;font-size:0.8rem;">No specific skills</span>'}
+            </div>
+            ${v.note ? `<p class="card-text">Note: "${v.note}"</p>` : ''}
+            <div class="card-meta" style="margin-bottom: 0; margin-top: auto;">
+              📍 ${latlng}
+            </div>
+          `;
+          elVolunteersGrid.appendChild(card);
+        });
+      }
+    }
+
+    // Assign volunteer securely to patient
+    window.assignVolunteer = function(patientId, volId) {
+      try {
+        let patients = JSON.parse(localStorage.getItem('triage_patients') || '[]');
+        let updated = false;
+        patients = patients.map(p => {
+          if (p.id === patientId) {
+            p.assignedVolunteerId = volId;
+            updated = true;
+          }
+          return p;
+        });
+        if (updated) {
+          localStorage.setItem('triage_patients', JSON.stringify(patients));
+          
+          // Broadcast to other tabs (e.g. if multiple commanders are open)
+          try {
+            const bc = new BroadcastChannel('triage_sync');
+            bc.postMessage('sync');
+            bc.close();
+          } catch(e) {}
+          
+          // Quick UI flash for feedback
+          const sel = document.querySelector(`select[onchange="assignVolunteer('${patientId}', this.value)"]`);
+          if (sel) {
+             sel.style.borderColor = 'var(--color-green)';
+             setTimeout(() => sel.style.borderColor = 'var(--color-border)', 1000);
+          }
+        }
+      } catch (e) {
+        console.error("Assignment failed", e);
+      }
+    };
+
+    function startAutoRefresh() {
+      if (refreshInterval) clearInterval(refreshInterval);
+      refreshInterval = setInterval(render, 5000);
+    }
+
+    // Controls
+    elAutoRefresh.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        startAutoRefresh();
+      } else {
+        clearInterval(refreshInterval);
+        document.getElementById('last-updated').textContent += ' (Paused)';
+      }
+    });
+
+    elBtnClear.addEventListener('click', () => {
+      if (confirm('CRITICAL WARNING: Are you sure you want to clear ALL patient and volunteer data? This cannot be undone.')) {
+        localStorage.removeItem('triage_patients');
+        localStorage.removeItem('volunteers');
+        render();
+        
+        try {
+          const bc = new BroadcastChannel('triage_sync');
+          bc.postMessage('sync');
+          bc.close();
+        } catch(e) {}
+      }
+    });
+
+    // Listen to native Cross-Tab LocalStorage events
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'triage_patients' || e.key === 'volunteers') {
+        render();
+      }
+    });
+
+    // Listen to explicit BroadcastChannel requests
+    try {
+      const bc = new BroadcastChannel('triage_sync');
+      bc.onmessage = (event) => {
+        if (event.data === 'sync') render();
+      };
+    } catch(e) {
+      console.warn('BroadcastChannel not supported');
+    }
+
+    // Bootstrap
+    render();
+    startAutoRefresh();
+
+  </script>
+</body>
+</html>

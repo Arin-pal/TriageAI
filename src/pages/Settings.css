@@ -1,0 +1,138 @@
+.settings-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-main {
+  flex-grow: 1;
+  padding: 24px 20px 40px;
+  background-color: var(--color-bg);
+  overflow-y: auto;
+}
+
+.settings-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 32px 0;
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+.settings-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.settings-section h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 16px 0;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+
+.settings-desc {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.settings-select {
+  width: 100%;
+  background: #111;
+  border: 1px solid var(--color-border);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none; /* remove default arrow to stylize better if needed, but native is fine for simplicity */
+}
+
+.settings-select:focus {
+  outline: none;
+  border-color: #CC0000;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 1rem;
+}
+
+.settings-row:last-of-type {
+  border-bottom: none;
+}
+
+.settings-row span:first-child {
+  color: var(--color-text-muted);
+}
+
+.settings-row span:last-child {
+  color: white;
+  font-weight: 600;
+}
+
+.status-ready {
+  color: var(--color-success) !important;
+}
+
+.status-loading {
+  color: var(--color-warning) !important;
+}
+
+.mt-3 {
+  margin-top: 20px;
+}
+
+/* About Section Customization */
+.about-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  text-align: center;
+  padding: 0;
+  margin-top: 56px;
+}
+
+.about-content p {
+  color: #555;
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+}
+
+.version-text {
+  font-weight: 800;
+  color: #777 !important;
+  font-size: 1.1rem !important;
+  margin-bottom: 20px !important;
+}
+
+/* Button overrides for settings */
+.btn-danger {
+  background: transparent;
+  border: 2px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn-danger:active {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.btn-danger:disabled {
+  border-color: var(--color-border);
+  color: #555;
+  background: transparent;
+  opacity: 0.7;
+}

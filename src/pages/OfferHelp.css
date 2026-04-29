@@ -1,0 +1,228 @@
+.civilian-help-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+  padding: 16px 20px 24px;
+}
+
+/* Header */
+.help-header {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.help-back-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 12px 8px 0;
+  min-height: 44px;
+  z-index: 2;
+}
+
+.help-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  font-family: var(--font-heading);
+}
+
+/* Main Form Area */
+.help-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-instruction {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 16px 0;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.skill-btn {
+  background: var(--color-surface);
+  border: 2px solid transparent;
+  color: white;
+  padding: 16px 12px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.skill-btn.selected {
+  background: rgba(0, 85, 204, 0.2);
+  border-color: #0055CC;
+  color: #60a5fa;
+  box-shadow: 0 4px 12px rgba(0, 85, 204, 0.15);
+}
+
+.note-section {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.note-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.note-textarea {
+  flex-grow: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: white;
+  padding: 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: none;
+  min-height: 120px;
+}
+
+.note-textarea:focus {
+  outline: none;
+  border-color: #0055CC;
+}
+
+/* Actions */
+.help-actions {
+  margin-top: 24px;
+}
+
+.ready-btn {
+  background-color: #0055CC;
+  color: white;
+  height: 64px;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 85, 204, 0.4);
+}
+
+.ready-btn:disabled {
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+/* Submitting Screen */
+.submitting-screen {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Confirmation Screen */
+.help-confirmation-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.check-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.15);
+  border: 4px solid var(--color-success);
+  color: var(--color-success);
+  font-size: 48px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.confirmation-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 8px 0;
+  font-family: var(--font-heading);
+}
+
+.confirmation-subtitle {
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+  margin: 0 0 48px 0;
+}
+
+.stay-where-you-are-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid #0055CC;
+  border-radius: 8px;
+  padding: 24px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.stay-where-you-are-box h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 8px 0;
+}
+
+.stay-where-you-are-box p {
+  color: var(--color-text-muted);
+  margin: 0 0 16px 0;
+  font-size: 0.95rem;
+}
+
+.gps-display {
+  background: #111;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: monospace;
+  color: #60a5fa;
+  font-size: 1.1rem;
+}
+
+.no-gps {
+  color: var(--color-warning);
+}
+
+.update-location-btn {
+  height: 56px;
+  font-weight: 700;
+  border-color: #0055CC;
+  color: #60a5fa;
+}
+
+.update-location-btn:active {
+  background-color: rgba(0, 85, 204, 0.2);
+}
