@@ -1,6 +1,6 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AIContext } from '../context/AIContext'
+import { useAI } from '../context/AIContext'
 import WorkerHeader from '../components/WorkerHeader'
 import WorkerBottomNav from '../components/WorkerBottomNav'
 import { getAllPatients, clearAllPatients } from '../utils/patientStore'
@@ -8,7 +8,7 @@ import './Settings.css'
 
 export default function Settings() {
   const navigate = useNavigate()
-  const { isModelLoaded, isModelLoading } = useContext(AIContext)
+  const { isModelLoaded, isModelLoading } = useAI()
   
   const [language, setLanguage] = useState(localStorage.getItem('app_language') || 'en-US')
   const [patientCount, setPatientCount] = useState(0)
