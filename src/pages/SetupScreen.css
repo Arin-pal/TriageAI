@@ -79,6 +79,88 @@
   line-height: 1.5;
 }
 
+/* URL input row */
+.setup-url-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.setup-url-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.setup-url-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: monospace;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color var(--transition);
+  box-sizing: border-box;
+}
+
+.setup-url-input:focus {
+  border-color: var(--color-brand-light);
+}
+
+.setup-url-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.setup-url-hint code {
+  font-family: monospace;
+  background: var(--color-surface-2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* Connection result */
+.conn-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 14px;
+}
+
+.conn-success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
+}
+
+.conn-fail {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.conn-icon {
+  font-size: 1.1rem;
+}
+
+/* Button row */
+.setup-btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .step-success {
   color: var(--color-success);
   font-weight: 600;

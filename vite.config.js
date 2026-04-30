@@ -5,8 +5,8 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
   plugins: [
-    basicSsl(),
     react(),
+    basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
@@ -73,9 +73,23 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
       },
     }),
   ],
+  server: {
+    host: '0.0.0.0',
+    port: 5174,
+    proxy: {
+      '/ollama-proxy': {
+        target: 'http://localhost:11434',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ollama-proxy/, ''),
+      },
+    },
+  },
+  build: {
+    assetsInlineLimit: 0
+  }
 })

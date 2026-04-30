@@ -159,22 +159,22 @@ export default function TriageScreen() {
     setAnalyzeSeconds(0)
     const timer = setInterval(() => setAnalyzeSeconds(s => s + 1), 1000)
     
-    // Simulate fake processing time for demo
+    // Simulate fake processing time for demo (4 seconds)
     setTimeout(() => {
       clearInterval(timer)
       navigate('/worker/result', { 
         state: { 
           result: {
             color: 'RED',
-            action: 'Apply tourniquet immediately',
-            reasoning: 'Patient has severe bleeding from the leg and requires immediate life-saving intervention.',
+            action: 'Control bleeding, airway management now',
+            reasoning: 'Unconscious with respiratory compromise',
             confidence: 'high'
           },
-          transcript: 'Patient has severe bleeding from the leg and is breathing very fast.',
+          transcript: 'Male approximately 40 years old, not breathing normally, large wound on left leg, unconscious',
           manualMode: false
         }
       })
-    }, 1500)
+    }, 4000)
   }
 
   const isReady = capturedImage && transcript
@@ -190,10 +190,11 @@ export default function TriageScreen() {
         <div className="camera-view">
           {/* Live rear camera feed or Demo Block */}
           {isDemoMode ? (
-            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>🎭</div>
-              <h2 style={{ color: 'var(--color-warning)', margin: '0 0 8px' }}>DEMO MODE ACTIVE</h2>
-              <p style={{ color: 'var(--color-text-muted)' }}>Camera & AI are bypassed.</p>
+            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#333', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+                 <div style={{ fontSize: '5rem' }}>🧍</div>
+                 <div style={{ marginTop: '16px', fontSize: '1.2rem', color: '#fff', fontWeight: 'bold' }}>Simulated Patient Image</div>
+              </div>
             </div>
           ) : (
             <video 
@@ -214,14 +215,14 @@ export default function TriageScreen() {
           )}
 
           {/* Live Transcript text */}
-          {transcript && (
+          {(transcript || isDemoMode) && (
             <div className="transcript-overlay">
-              <p>{transcript}</p>
+              <p>{isDemoMode ? 'Male approximately 40 years old, not breathing normally, large wound on left leg, unconscious' : transcript}</p>
             </div>
           )}
 
           {/* Ready Banner */}
-          {isReady && !isAnalyzing && !isDemoMode && (
+          {((isReady && !isAnalyzing && !isDemoMode) || isDemoMode) && (
             <div className="ready-banner">
               Ready to Analyze ✓
             </div>

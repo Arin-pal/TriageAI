@@ -39,10 +39,10 @@ export default function WorkerHeader() {
         
         <div className="ai-status-pill">
           {modelError ? (
-            <>
+            <Link to="/worker/manual" style={{display:'flex', gap:'8px', alignItems:'center', textDecoration:'none', color:'inherit'}}>
               <span className="status-dot red" aria-hidden="true"></span>
-              <span>Manual Mode</span>
-            </>
+              <span>AI Offline — Manual Mode</span>
+            </Link>
           ) : isModelLoading ? (
             <>
               <span className="status-dot yellow pulse" aria-hidden="true"></span>

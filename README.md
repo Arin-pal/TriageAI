@@ -1,71 +1,59 @@
 # TriageAI
 
-AI-powered medical triage Progressive Web App built with React + Vite.
+**An AI-Powered Medical Triage Assistant for Mass Casualty Events**
 
-## Stack
+TriageAI is an offline-capable Progressive Web App (PWA) designed to aid emergency responders in classifying patients during mass casualty events using the standard START protocol. It utilizes on-device AI inference to function perfectly without any internet access.
 
-| Tool | Purpose |
-|------|---------|
-| React 18 | UI framework |
-| React Router DOM v6 | Client-side routing |
-| Vite 6 | Build tool & dev server |
-| vite-plugin-pwa | PWA manifest + Workbox service worker |
+## How to Run Locally
 
-## Getting Started
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   The app will run locally over HTTPS. Note: It requires a secure context (HTTPS) or `localhost` to access device hardware like the camera and microphone.
 
-> Node.js 18+ required.
+## How to Deploy
 
+To create a production-ready static build:
 ```bash
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # production build → dist/
-npm run preview    # preview production build locally
+npm run build
 ```
+This generates the optimized bundle in the `dist/` directory, complete with Service Workers and caching policies required for a fully offline PWA installation.
 
-## PWA / Install on Android Chrome
+## How to Set Up the Laptop Server
 
-1. Run `npm run build && npm run preview` (or deploy to HTTPS).
-2. Open in Chrome on Android → tap **Add to Home Screen** in the browser menu.
-3. The app installs as a standalone PWA with theme colour `#CC0000`.
+The TriageAI system includes an optional Commander Dashboard for incident commanders to monitor realtime patient data across a local network without relying on cloud infrastructure.
 
-## Offline Support
+1. Navigate to the server directory:
+   ```bash
+   cd triageai-server
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the server:
+   ```bash
+   node server.js
+   ```
+4. Access the dashboard by opening `http://<laptop-ip>:3000/commander.html` in a web browser.
+5. In the TriageAI mobile app, go to Settings and enter the Laptop IP Address to synchronize data.
 
-`vite-plugin-pwa` generates a Workbox service worker that:
+## Gemma 4 Features Utilized
 
-- **Pre-caches** all built JS/CSS/HTML/assets on install.
-- **Cache-First** for fonts and static assets.
-- **Network-First** for API calls with cached fallback.
-- Displays an offline banner when connectivity is lost.
+- **On-device inference (Gemma E2B):** TriageAI leverages the powerful MediaPipe Tasks GenAI API to run a 2B-parameter Gemma model fully on-device, meaning zero latency from cloud roundtrips and 100% offline functionality.
+- **Multimodal input (vision + voice):** Combines visual data from the device camera with the Web Speech API to provide the LLM with comprehensive multimodal contextual understanding of the patient's state.
+- **Reasoning mode (START protocol):** Uses strict few-shot prompting to force the LLM into a rigid analytical reasoning flow that enforces the global START (Simple Triage and Rapid Treatment) medical protocol.
+- **Multilingual output:** Integrates text-to-speech feedback, supporting multiple languages out of the box (English, Hindi, Arabic, Turkish, French) to guide responders natively.
 
-## PWA Config Summary
+## Hackathon Tracks
 
-| Field | Value |
-|-------|-------|
-| name | TriageAI |
-| short_name | TriageAI |
-| theme_color | `#CC0000` |
-| background_color | `#0a0a0a` |
-| display | standalone |
-| orientation | portrait |
-| start_url | / |
-
-## Project Structure
-
-```
-src/
-  components/
-    OfflineBanner.jsx   # Shown when offline
-  hooks/
-    useOnlineStatus.js  # navigator.onLine listener
-  pages/
-    Home.jsx / .css
-    Triage.jsx / .css
-    Results.jsx / .css
-    NotFound.jsx
-  App.jsx               # Routes
-  main.jsx              # Entry point
-  index.css             # Design system
-
-sw.js                   # Custom SW reference (Workbox auto-generates in dist/)
-vite.config.js          # Vite + PWA config
-```
+TriageAI is entering the following tracks:
+- **Health and Sciences** (Primary)
+- **Global Resilience**
+- **Safety**
+- **Technical Excellence**

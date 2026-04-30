@@ -11,6 +11,8 @@ import ReportInjured from './pages/ReportInjured'
 import OfferHelp from './pages/OfferHelp'
 import SetupScreen from './pages/SetupScreen'
 import Settings from './pages/Settings'
+import DemoWalkthrough from './pages/DemoWalkthrough'
+import CommanderDashboard from './pages/CommanderDashboard'
 
 export default function App() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
@@ -86,11 +88,18 @@ export default function App() {
     )
   }
 
+  const isDemoMode = localStorage.getItem('demo_mode') === 'true'
+
   return (
     <>
       {isOffline && (
         <div style={{ backgroundColor: '#444', color: 'white', textAlign: 'center', padding: '4px', fontSize: '13px', fontWeight: 600, zIndex: 99999, position: 'relative' }}>
-          Offline — all features still work
+          Offline — AI features via local network
+        </div>
+      )}
+      {isDemoMode && (
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)', fontSize: '6rem', color: 'rgba(230, 168, 23, 0.15)', fontWeight: '900', pointerEvents: 'none', zIndex: 99998, whiteSpace: 'nowrap', userSelect: 'none' }}>
+          DEMO MODE
         </div>
       )}
       <Routes>
@@ -105,6 +114,8 @@ export default function App() {
         <Route path="/civilian/help" element={<OfferHelp />} />
         <Route path="/setup" element={<SetupScreen />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/demo" element={<DemoWalkthrough />} />
+        <Route path="/commander" element={<CommanderDashboard />} />
       </Routes>
     </>
   )

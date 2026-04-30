@@ -1,56 +1,45 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { initModel } from '../ai/triageEngine'
 
 const AIContext = createContext()
 
 export function AIProvider({ children }) {
-  const [isModelLoaded, setIsModelLoaded] = useState(false)
-  const [isModelLoading, setIsModelLoading] = useState(true) // Start assuming we need to load
-  const [modelError, setModelError] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
+  const [isModelLoading, setIsModelLoading] = useState(true)
 
   useEffect(() => {
     let mounted = true
     
-    async function load() {
-      // Don't try loading if setup isn't complete yet
-      if (localStorage.getItem('setup_complete') !== 'true') {
-        if (mounted) setIsModelLoading(false)
-        return
-      }
-
+    const checkConnection = async () => {
+      const url = localStorage.getItem('ollama_url') || window.location.origin + '/ollama-proxy'
       try {
-        await initModel()
+        const response = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) })
         if (mounted) {
-          setIsModelLoaded(true)
+          setIsConnected(response.ok)
           setIsModelLoading(false)
-          setModelError(false)
         }
       } catch (err) {
-        console.error('Failed to init AI model:', err)
         if (mounted) {
-          setModelError(true)
+          setIsConnected(false)
           setIsModelLoading(false)
         }
       }
     }
 
-    load()
-
-    // Listen for custom event in case setup finishes during the same session
-    const handleSetupDone = () => {
-      setIsModelLoading(true)
-      load()
-    }
-    window.addEventListener('setup_complete', handleSetupDone)
+    checkConnection()
+    const interval = setInterval(checkConnection, 30000)
 
     return () => {
       mounted = false
-      window.removeEventListener('setup_complete', handleSetupDone)
+      clearInterval(interval)
     }
   }, [])
 
   return (
-    <AIContext.Provider value={{ isModelLoaded, isModelLoading, modelError }}>
+    <AIContext.Provider value={{ 
+      isModelLoaded: isConnected, 
+      isModelLoading, 
+      modelError: !isConnected && !isModelLoading 
+    }}>
       {children}
     </AIContext.Provider>
   )

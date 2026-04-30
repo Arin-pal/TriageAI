@@ -122,7 +122,7 @@ export default function ResultScreen() {
 
         {/* 3. Output Text */}
         <div className="result-content" style={{ '--result-color': colorData.hex }}>
-          <h1 className="result-color-text" style={{ color: colorData.hex }}>
+          <h1 className="result-color-text">
             {colorKey}
           </h1>
           <p className="result-action-text">{result.action}</p>

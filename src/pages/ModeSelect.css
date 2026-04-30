@@ -23,12 +23,22 @@
 .mode-cards-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
   max-width: 400px;
   flex-grow: 1;
   justify-content: center;
-  margin: 40px 0;
+  margin: 30px 0;
+}
+
+@media (min-width: 900px) {
+  .mode-cards-container {
+    flex-direction: row;
+    max-width: 1000px;
+  }
+  .mode-card {
+    flex: 1;
+  }
 }
 
 .mode-card {
@@ -36,13 +46,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #141414;
+  background: #111;
   border-radius: 20px;
-  padding: 36px 20px;
+  padding: 24px 20px;
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  min-height: 200px;
+  border: 1px solid #222;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 180px;
   color: white;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
@@ -50,47 +60,44 @@
 }
 
 .mode-card:hover, .mode-card:focus-visible {
-  transform: translateY(-4px);
-}
-
-.responder-card {
-  border-color: #7a0000; /* Dark red border */
+  transform: translateY(-8px);
+  background: #181818;
 }
 
 .responder-card:hover, .responder-card:focus-visible {
   border-color: #CC0000;
-  box-shadow: 0 8px 30px rgba(204,0,0,0.25);
-}
-
-.civilian-card {
-  border-color: #003366; /* Dark blue border */
+  box-shadow: 0 10px 40px rgba(204,0,0,0.3);
 }
 
 .civilian-card:hover, .civilian-card:focus-visible {
   border-color: #0066cc;
-  box-shadow: 0 8px 30px rgba(0,102,204,0.25);
+  box-shadow: 0 10px 40px rgba(0,102,204,0.3);
+}
+
+.commander-card:hover, .commander-card:focus-visible {
+  border-color: #e6a817;
+  box-shadow: 0 10px 40px rgba(230,168,23,0.3);
 }
 
 .card-icon {
-  font-size: 3rem;
-  margin-bottom: 16px;
+  font-size: 2.5rem;
+  margin-bottom: 12px;
 }
 
 .card-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 6px;
-  font-family: var(--font-heading, sans-serif);
+  margin-bottom: 4px;
 }
 
 .card-subtitle {
-  font-size: 1rem;
-  color: #888;
+  font-size: 0.9rem;
+  color: #666;
 }
 
 .mode-select-footer {
   text-align: center;
-  color: #888;
-  font-size: 0.85rem;
+  color: #444;
+  font-size: 0.8rem;
   padding-bottom: 2vh;
 }

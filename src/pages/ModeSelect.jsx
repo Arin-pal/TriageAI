@@ -16,6 +16,8 @@ export default function ModeSelect() {
     navigate(path)
   }
 
+  const isLaptop = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+
   return (
     <main className="mode-select-page page-enter">
       <header className="mode-select-header">
@@ -42,6 +44,18 @@ export default function ModeSelect() {
           <h2 className="card-title">I want to help</h2>
           <p className="card-subtitle">Civilian volunteer</p>
         </button>
+
+        {isLaptop && (
+          <button 
+            className="mode-card commander-card" 
+            onClick={() => handleSelectMode('commander', '/commander')}
+            aria-label="Incident Commander. Monitor operations."
+          >
+            <span className="card-icon" aria-hidden="true">📡</span>
+            <h2 className="card-title">Incident Commander</h2>
+            <p className="card-subtitle">Monitor operations</p>
+          </button>
+        )}
       </section>
 
       <footer className="mode-select-footer">

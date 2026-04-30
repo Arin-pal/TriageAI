@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './SetupScreen.css'
 
-const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/llm_inference/gemma_2b_en/int8/1/gemma_2b_en.bin'
-const EXPECTED_SIZE = 800 * 1024 * 1024 // Fallback if no Content-Length
+const DEFAULT_OLLAMA_URL = window.location.origin + '/ollama-proxy'
 
 export default function SetupScreen() {
   const navigate = useNavigate()
   const [isStandalone, setIsStandalone] = useState(false)
-  const [downloadProgress, setDownloadProgress] = useState(0)
-  const [isDownloading, setIsDownloading] = useState(false)
+  const [ollamaUrl, setOllamaUrl] = useState(
+    localStorage.getItem('ollama_url') || DEFAULT_OLLAMA_URL
+  )
+  const [connStatus, setConnStatus] = useState('idle') // idle | testing | success | fail
+  const [connMessage, setConnMessage] = useState('')
 
   // Skip to "/" if setup is already complete
   useEffect(() => {
@@ -18,7 +20,6 @@ export default function SetupScreen() {
     }
   }, [navigate])
 
-  // Track standalone display mode
   useEffect(() => {
     const mql = window.matchMedia('(display-mode: standalone)')
     setIsStandalone(mql.matches)
@@ -27,113 +28,109 @@ export default function SetupScreen() {
     return () => mql.removeEventListener('change', handler)
   }, [])
 
-  const startDownload = async () => {
-    if (isDownloading) return
-    setIsDownloading(true)
+  const handleUrlChange = (e) => {
+    const val = e.target.value
+    setOllamaUrl(val)
+    localStorage.setItem('ollama_url', val)
+    setConnStatus('idle')
+  }
+
+  const testConnection = async () => {
+    setConnStatus('testing')
+    setConnMessage('')
     try {
-      const cache = await caches.open('triageai-models')
-      const cached = await cache.match(MODEL_URL)
-      
-      if (cached) {
-        setDownloadProgress(100)
-        finishSetup()
-        return
+      const url = ollamaUrl.trim() || DEFAULT_OLLAMA_URL
+      const response = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(5000) })
+      if (response.ok) {
+        setConnStatus('success')
+        setConnMessage('Gemma AI Ready')
+      } else {
+        throw new Error(`HTTP ${response.status}`)
       }
-
-      const response = await fetch(MODEL_URL)
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-      
-      const contentLengthHeader = response.headers.get('Content-Length')
-      const totalBytes = contentLengthHeader ? parseInt(contentLengthHeader, 10) : EXPECTED_SIZE
-      
-      let receivedBytes = 0
-      const reader = response.body.getReader()
-      const chunks = []
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        
-        chunks.push(value)
-        receivedBytes += value.length
-        
-        // Cap at 99 until fully processed
-        const progress = Math.min(99, Math.round((receivedBytes / totalBytes) * 100))
-        setDownloadProgress(progress)
-      }
-
-      // Save to cache API
-      const blob = new Blob(chunks)
-      await cache.put(MODEL_URL, new Response(blob))
-      
-      setDownloadProgress(100)
-      finishSetup()
     } catch (err) {
-      console.error('Download failed', err)
-      alert('Failed to download model. Check connection and try again.')
-      setIsDownloading(false)
-      setDownloadProgress(0)
+      setConnStatus('fail')
+      setConnMessage('Make sure Ollama is running on the connected laptop')
     }
   }
 
   const finishSetup = () => {
     localStorage.setItem('setup_complete', 'true')
-    window.dispatchEvent(new Event('setup_complete'))
-    setTimeout(() => {
-      navigate('/', { replace: true })
-    }, 600)
+    navigate('/', { replace: true })
   }
 
   return (
     <main className="setup-page page-enter">
       <header className="setup-header">
         <h1 className="setup-title">Initial Setup</h1>
-        <p className="setup-subtitle">Complete these steps to use TriageAI offline.</p>
+        <p className="setup-subtitle">Follow these steps to activate AI triage.</p>
       </header>
 
       <section className="setup-steps">
-        {/* Step 1 */}
+        {/* Step 1: Install */}
         <div className={`setup-step card ${isStandalone ? 'step-complete' : ''}`}>
           <div className="step-header">
             <span className="step-number">1</span>
             <h2>Install App</h2>
-            {isStandalone && <span className="step-check" aria-hidden="true">✅</span>}
+            {isStandalone && <span className="step-check">✅</span>}
           </div>
           <p className="step-desc">
-            Tap your browser menu → <strong>Add to Home Screen</strong>
+            Tap your browser menu → <strong>Add to Home Screen</strong>. This ensures the app works perfectly offline.
           </p>
-          {isStandalone && <p className="step-success">App installed successfully.</p>}
         </div>
 
-        {/* Step 2 */}
-        <div className={`setup-step card ${downloadProgress === 100 ? 'step-complete' : ''}`}>
+        {/* Step 2: Connect to AI */}
+        <div className={`setup-step card ${connStatus === 'success' ? 'step-complete' : ''}`}>
           <div className="step-header">
             <span className="step-number">2</span>
-            <h2>Download AI Model</h2>
-            {downloadProgress === 100 && <span className="step-check" aria-hidden="true">✅</span>}
+            <h2>Connect to AI</h2>
+            {connStatus === 'success' && <span className="step-check">✅</span>}
           </div>
+
           <p className="step-desc">
-            TriageAI uses a lightweight local AI model to process symptoms without an internet connection.
+            TriageAI uses Ollama running on the paramedic laptop. Enter the server address and verify the connection.
           </p>
-          
-          <div className="download-action">
-            {downloadProgress > 0 ? (
-              <div className="progress-container">
-                <div className="progress-bar-bg">
-                  <div 
-                    className="progress-bar-fill" 
-                    style={{ width: `${downloadProgress}%` }}
-                  />
-                </div>
-                <span className="progress-text">{downloadProgress}%</span>
-              </div>
-            ) : (
-              <button 
-                className="btn btn-primary btn-full" 
-                onClick={startDownload}
-                disabled={isDownloading}
-              >
-                Download Gemma AI (800MB)
+
+          <div className="setup-url-row">
+            <label className="setup-url-label" htmlFor="ollama-url-input">Ollama Server URL</label>
+            <input
+              id="ollama-url-input"
+              type="url"
+              className="setup-url-input"
+              value={ollamaUrl}
+              onChange={handleUrlChange}
+              placeholder="http://localhost:11434"
+              spellCheck={false}
+              autoCapitalize="none"
+            />
+            <p className="setup-url-hint">
+              Leave this as the default auto-detected proxy URL.
+            </p>
+          </div>
+
+          {connStatus === 'success' ? (
+            <div className="conn-result conn-success">
+              <span className="conn-icon">✅</span>
+              <span>{connMessage}</span>
+            </div>
+          ) : connStatus === 'fail' ? (
+            <div className="conn-result conn-fail">
+              <span className="conn-icon">❌</span>
+              <span>{connMessage}</span>
+            </div>
+          ) : null}
+
+          <div className="setup-btn-row">
+            <button
+              className="btn btn-outline btn-full"
+              onClick={testConnection}
+              disabled={connStatus === 'testing'}
+            >
+              {connStatus === 'testing' ? 'Testing…' : connStatus === 'fail' ? 'Retry Connection' : 'Test Connection'}
+            </button>
+
+            {connStatus === 'success' && (
+              <button className="btn btn-primary btn-full mt-3" onClick={finishSetup}>
+                Enter TriageAI →
               </button>
             )}
           </div>

@@ -1,100 +1,91 @@
-import { FilesetResolver, LlmInference } from '@mediapipe/tasks-genai'
+const OLLAMA_URL = localStorage.getItem('ollama_url') 
+  || 'http://192.168.137.1:11434';
 
-export let isModelLoaded = false
-let llmInference = null
+export const isModelLoaded = true;
 
-const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/llm_inference/gemma_2b_en/int8/1/gemma_2b_en.bin'
+export async function analyzePatient(transcript, imageBase64) {
+  const langCode = localStorage.getItem('app_language') || 'en-US';
+  const langMap = {
+    'en-US': 'English',
+    'hi-IN': 'Hindi',
+    'ar-SA': 'Arabic',
+    'tr-TR': 'Turkish',
+    'fr-FR': 'French'
+  };
+  const langName = langMap[langCode] || 'English';
 
-export async function initModel() {
-  if (isModelLoaded) return
-
-  // Load the model from Cache API
-  const cache = await caches.open('triageai-models')
-  const cachedResponse = await cache.match(MODEL_URL)
-
-  if (!cachedResponse) {
-    throw new Error('AI Model not found in cache. Setup was not completed.')
-  }
-
-  // Convert to object URL to avoid excessive RAM overhead
-  const modelBlob = await cachedResponse.blob()
-  const blobUrl = URL.createObjectURL(modelBlob)
-  
-  const startTime = Date.now()
-
-  try {
-    // Resolve WASM binaries
-    const genaiFileset = await FilesetResolver.forGenAiTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai/wasm'
-    )
-
-    // Initialize Gemma
-    llmInference = await LlmInference.createFromOptions(genaiFileset, {
-      baseOptions: {
-        modelAssetPath: blobUrl,
-      },
-      maxTokens: 200,
-      topK: 1,
-      temperature: 0.1,
-      randomSeed: 1,
-    })
-
-    // Warmup call to prevent first-run latency
-    await llmInference.generateResponse('Return this JSON: {color: GREEN, action: test}')
-
-    const loadTime = ((Date.now() - startTime) / 1000).toFixed(2)
-    console.log(`Model loaded in ${loadTime}s`)
-
-    isModelLoaded = true
-  } finally {
-    // Clean up the object URL to free memory
-    URL.revokeObjectURL(blobUrl)
-  }
-}
-
-export async function analyzePatient(transcript) {
-  if (!isModelLoaded || !llmInference) {
-    throw new Error('Model is not initialized yet.')
-  }
-
-  const systemPrompt = `You are a triage assistant. Output JSON only. No other text.
-
-Rules:
-- If patient is walking and talking: {"color":"GREEN","action":"Walking wounded, move to green area","reasoning":"Patient ambulatory","confidence":"high"}
-- If patient is not breathing after airway repositioned: {"color":"BLACK","action":"Do not resuscitate, move on","reasoning":"Unsurvivable","confidence":"high"}  
-- If breathing over 30 per minute or under 10: {"color":"RED","action":"[specific action for this patient]","reasoning":"Respiratory compromise","confidence":"high"}
-- If no radial pulse or capillary refill over 2 seconds: {"color":"RED","action":"[specific action]","reasoning":"Circulatory compromise","confidence":"high"}
-- If cannot follow commands: {"color":"RED","action":"[specific action]","reasoning":"Altered mental status","confidence":"high"}
-- Otherwise: {"color":"YELLOW","action":"[specific action]","reasoning":"Stable","confidence":"medium"}
+  const prompt = `You are a medical triage assistant.
+Analyze the patient description and classify using 
+START triage protocol.
 
 Patient description: ${transcript}
 
-Respond with JSON only:`
+Classify into exactly one category:
+GREEN - Patient is walking, talking, and conscious with minor or no injuries. Can help themselves.
+YELLOW - Patient is injured but stable. Breathing normally, has a pulse, can follow commands. Not immediate danger.
+RED - Patient has life threatening injuries but CAN survive with immediate treatment. Unconscious, not breathing normally, severe bleeding, no pulse.
+BLACK - Patient is deceased or has unsurvivable injuries. Do not use resources.
 
-  // Format using Gemma's turn-based chat template
-  const formattedPrompt = `<start_of_turn>user\n${systemPrompt}<end_of_turn>\n<start_of_turn>model\n`
+Important rules:
+- If patient says they are fine or okay → GREEN
+- If patient is walking and talking → GREEN  
+- If patient has minor cuts or bruises → GREEN
+- Only use RED for genuinely life threatening situations
+- When unsure between RED and YELLOW → choose YELLOW
+- IMPORTANT: The 'action' and 'reasoning' fields must be translated to ${langName}. The 'color' must remain in English.
+
+Return ONLY this JSON, nothing else:
+{"color":"GREEN","action":"specific instruction max 10 words","reasoning":"one sentence","confidence":"high"}
+
+JSON:`;
+
+  const body = {
+    model: 'gemma3:4b',
+    prompt: prompt,
+    stream: false,
+    options: {
+      temperature: 0.1,
+      num_predict: 150
+    }
+  };
+
+  if (imageBase64) {
+    body.images = [imageBase64];
+  }
 
   try {
-    const response = await llmInference.generateResponse(formattedPrompt)
+    const ollamaUrl = localStorage.getItem('ollama_url') || window.location.origin + '/ollama-proxy';
+    const response = await fetch(`${ollamaUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
 
-    // Clean up any markdown code blocks or whitespace the model might output
-    const jsonStr = response.replace(/```json/gi, '').replace(/```/g, '').trim()
-    const parsed = JSON.parse(jsonStr)
+    if (!response.ok) throw new Error('Ollama request failed');
 
-    // Ensure it has all required fields just to be safe
-    return {
-      color: parsed.color || 'ERROR',
-      action: parsed.action || 'Check manually',
-      reasoning: parsed.reasoning || 'AI returned incomplete data',
-      confidence: parsed.confidence || 'low'
+    const data = await response.json();
+    const text = data.response.trim();
+
+    const jsonMatch = text.match(/\{[\s\S]*?\}/);
+    if (!jsonMatch) throw new Error('No JSON in response: ' + text);
+
+    const result = JSON.parse(jsonMatch[0]);
+
+    const validColors = ['RED','YELLOW','GREEN','BLACK'];
+    if (!validColors.includes(result.color?.toUpperCase())) {
+      result.color = 'YELLOW';
     }
+    result.color = result.color.toUpperCase();
+
+    return result;
+
   } catch (error) {
-    console.error('AI parse failed or model generation error:', error)
+    console.error('Ollama error:', error);
     return {
       color: 'ERROR',
       action: 'Use manual protocol now',
-      reasoning: 'AI parse failed',
+      reasoning: 'AI unavailable: ' + error.message,
       confidence: 'low'
-    }
+    };
   }
 }
