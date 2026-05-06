@@ -143,8 +143,14 @@ export default function TriageScreen() {
       setAnalyzeSeconds(s => s + 1)
     }, 1000)
 
+    // Strip the data URL prefix so only the raw base64 string is sent to Ollama
+    const imageBase64 = capturedImage
+      ? capturedImage.replace(/^data:image\/\w+;base64,/, '')
+      : null
+    console.log('[TriageAI] Sending to analyzePatient — transcript length:', transcript.length, '| image attached:', !!imageBase64)
+
     try {
-      const result = await analyzePatient(transcript)
+      const result = await analyzePatient(transcript, imageBase64)
       clearInterval(timer)
       navigate('/worker/result', { state: { result, transcript } })
     } catch (err) {
