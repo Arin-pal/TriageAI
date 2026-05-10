@@ -1,30 +1,452 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TriageAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- PWA / Android Chrome installability -->
-    <link rel="icon" type="image/png" href="/pwa-192x192.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="TriageAI" />
-    <meta name="theme-color" content="#CC0000" />
-    <meta name="msapplication-TileColor" content="#CC0000" />
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --border: #1e2530;
+    --red: #ff3b3b;
+    --yellow: #f5c518;
+    --green: #2ddd6e;
+    --black-tag: #888ea0;
+    --text: #e8ecf4;
+    --muted: #5a6070;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Barlow', sans-serif;
+  }
 
-    <!-- SEO -->
-    <title>TriageAI – AI-Powered Medical Triage</title>
-    <meta name="description" content="TriageAI uses AI to help you assess medical symptoms and prioritise care in real time." />
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  header {
+    width: 100%;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 22px;
+    color: var(--red);
+    letter-spacing: 2px;
+  }
+
+  .logo span {
+    color: var(--text);
+    opacity: 0.4;
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-left: 4px;
+  }
+
+  .tagline {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+
+  main {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Camera / upload zone */
+  .capture-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: var(--surface);
+    aspect-ratio: 4/3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .capture-zone:hover { border-color: #2e3a4a; }
+  .capture-zone.has-image { border-style: solid; border-color: #2e3a4a; }
+
+  #preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+
+  .capture-zone.has-image #preview { display: block; }
+
+  .capture-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .capture-zone.has-image .capture-hint { display: none; }
+
+  .capture-icon {
+    width: 48px;
+    height: 48px;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .capture-icon svg { width: 22px; height: 22px; stroke: var(--muted); fill: none; stroke-width: 1.5; }
+
+  .capture-hint p {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  #file-input { display: none; }
+
+  /* Buttons */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn {
+    padding: 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn:hover { border-color: #2e3a4a; background: #161b22; }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    grid-column: 1 / -1;
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    padding: 16px;
+  }
+
+  .btn-primary:hover { background: #e02e2e; border-color: #e02e2e; }
+  .btn-primary:disabled {
+    background: #2a1a1a;
+    border-color: #3a2020;
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Status / loading */
+  .status {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    min-height: 18px;
+    letter-spacing: 1px;
+  }
+
+  .status.loading { color: var(--yellow); }
+  .status.error { color: var(--red); }
+
+  /* Result card */
+  .result-card {
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    display: none;
+  }
+
+  .result-card.visible { display: block; }
+
+  .result-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .triage-badge {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+
+  .badge-RED    { background: #2a0a0a; color: var(--red);       border: 1px solid #4a1515; }
+  .badge-YELLOW { background: #252000; color: var(--yellow);     border: 1px solid #3d3500; }
+  .badge-GREEN  { background: #0a2015; color: var(--green);      border: 1px solid #1a4030; }
+  .badge-BLACK  { background: #181a1f; color: var(--black-tag);  border: 1px solid #2a2d35; }
+
+  .result-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .result-body {
+    padding: 0 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .result-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 18px;
+  }
+
+  .result-section label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+
+  .result-section p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .result-raw {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+
+  /* Pulse animation for loading */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .pulsing { animation: pulse 1.2s ease-in-out infinite; }
+
+  /* Scan line overlay on preview */
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TRIAGE<span>AI</span></div>
+  <div class="tagline">START Protocol</div>
+</header>
+
+<main>
+  <div class="capture-zone" id="capture-zone" onclick="document.getElementById('file-input').click()">
+    <img id="preview" alt="Patient image preview">
+    <div class="scan-overlay"></div>
+    <div class="capture-hint">
+      <div class="capture-icon">
+        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <p>TAP TO CAPTURE / UPLOAD</p>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*" capture="environment">
+
+  <div class="btn-row">
+    <button class="btn" onclick="document.getElementById('file-input').click()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      UPLOAD
+    </button>
+    <button class="btn" onclick="clearImage()">
+      CLEAR
+    </button>
+    <button class="btn-primary btn" id="triage-btn" onclick="runTriage()" disabled>
+      ▶ RUN TRIAGE
+    </button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="result-card" id="result-card">
+    <div class="result-header">
+      <div class="triage-badge" id="triage-badge">—</div>
+      <div class="result-label">Triage Assessment</div>
+    </div>
+    <div class="result-divider"></div>
+    <div class="result-body">
+      <div class="result-section">
+        <label>Reason</label>
+        <p id="result-reason">—</p>
+      </div>
+      <div class="result-section">
+        <label>Immediate Action</label>
+        <p id="result-action">—</p>
+      </div>
+      <div class="result-section">
+        <label>Raw Model Output</label>
+        <div class="result-raw" id="result-raw"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  let selectedFile = null;
+
+  document.getElementById('file-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedFile = file;
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const preview = document.getElementById('preview');
+      preview.src = ev.target.result;
+      document.getElementById('capture-zone').classList.add('has-image');
+      document.getElementById('triage-btn').disabled = false;
+      document.getElementById('result-card').classList.remove('visible');
+      setStatus('');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function clearImage() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('preview').src = '';
+    document.getElementById('capture-zone').classList.remove('has-image');
+    document.getElementById('triage-btn').disabled = true;
+    document.getElementById('result-card').classList.remove('visible');
+    setStatus('');
+  }
+
+  function setStatus(msg, type = '') {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+  }
+
+  async function runTriage() {
+    if (!selectedFile) return;
+
+    const btn = document.getElementById('triage-btn');
+    btn.disabled = true;
+    setStatus('ANALYZING PATIENT...', 'loading');
+    btn.classList.add('pulsing');
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const res = await fetch('/triage', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        setStatus('ERROR: ' + data.error, 'error');
+        return;
+      }
+
+      parseAndDisplay(data.result);
+      setStatus('');
+
+    } catch (err) {
+      setStatus('CONNECTION ERROR — is the server running?', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('pulsing');
+    }
+  }
+
+  function parseAndDisplay(raw) {
+    // Extract triage color
+    const colorMatch = raw.match(/TRIAGE\s+COLOR[:\s]+\*{0,2}(RED|YELLOW|GREEN|BLACK)\*{0,2}/i);
+    const color = colorMatch ? colorMatch[1].toUpperCase() : 'UNKNOWN';
+
+    // Extract reason
+    const reasonMatch = raw.match(/REASON[:\s]+(.+?)(?=\n.*ACTION|$)/is);
+    const reason = reasonMatch ? reasonMatch[1].replace(/\*+/g, '').trim() : '—';
+
+    // Extract immediate action
+    const actionMatch = raw.match(/IMMEDIATE\s+ACTION[:\s]+(.+?)(?=\n|$)/is);
+    const action = actionMatch ? actionMatch[1].replace(/\*+/g, '').trim() : '—';
+
+    // Update badge
+    const badge = document.getElementById('triage-badge');
+    badge.textContent = color;
+    badge.className = 'triage-badge badge-' + color;
+
+    document.getElementById('result-reason').textContent = reason;
+    document.getElementById('result-action').textContent = action;
+    document.getElementById('result-raw').textContent = raw;
+    document.getElementById('result-card').classList.add('visible');
+  }
+</script>
+
+</body>
 </html>
