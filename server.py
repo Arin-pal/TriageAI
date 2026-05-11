@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import base64
@@ -32,6 +32,11 @@ Be direct. Lives depend on speed."""
 async def serve_ui():
     with open("index.html", "r") as f:
         return f.read()
+
+
+@app.get("/hospitals.json")
+async def serve_hospitals():
+    return FileResponse("hospitals.json", media_type="application/json")
 
 
 @app.post("/triage")
