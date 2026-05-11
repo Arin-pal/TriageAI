@@ -20,6 +20,10 @@ export default function TriageScreen() {
   const [capturedImage, setCapturedImage] = useState(null)
   const [transcript, setTranscript] = useState('')
   const [isListening, setIsListening] = useState(false)
+  const [showResumeHint, setShowResumeHint] = useState(false)
+  // wasListeningRef is needed because onend is registered once at mount —
+  // reading isListening state there would always return its stale initial value.
+  const wasListeningRef = useRef(false)
   
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzeSeconds, setAnalyzeSeconds] = useState(0)
@@ -75,26 +79,30 @@ export default function TriageScreen() {
 
   // Initialize Speech Recognition
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition()
-      recognition.continuous = false
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      const recognition = new window.webkitSpeechRecognition()
+
+      recognition.continuous = true
       recognition.interimResults = true
 
       recognition.onresult = (event) => {
-        let currentTranscript = ''
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          currentTranscript += event.results[i][0].transcript
+        let text = ''
+        for (let i = 0; i < event.results.length; i++) {
+          text += event.results[i][0].transcript + ' '
         }
-        setTranscript(currentTranscript)
+        setTranscript(text.trim())
       }
 
       recognition.onend = () => {
+        if (wasListeningRef.current) {
+          // Browser auto-stopped mid-session — show hint so user knows to tap mic again
+          setShowResumeHint(true)
+          setTimeout(() => setShowResumeHint(false), 3000)
+        }
         setIsListening(false)
       }
 
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error)
+      recognition.onerror = () => {
         setIsListening(false)
       }
 
@@ -116,15 +124,15 @@ export default function TriageScreen() {
   }
 
   const toggleMic = () => {
-    if (!recognitionRef.current) {
-      alert("Speech recognition is not supported in this browser.")
-      return
-    }
+    if (!recognitionRef.current) return
+
     if (isListening) {
+      wasListeningRef.current = false  // user chose to stop — onend should not show hint
       recognitionRef.current.stop()
       setIsListening(false)
     } else {
-      setTranscript('')
+      wasListeningRef.current = true
+      setShowResumeHint(false)
       recognitionRef.current.start()
       setIsListening(true)
     }
@@ -187,6 +195,65 @@ export default function TriageScreen() {
 
   return (
     <div className="worker-page-container">
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
+
+      {/* Pulsing recording banner — fixed so it's always visible regardless of scroll */}
+      {isListening && (
+        <div style={{
+          position: 'fixed',
+          top: '80px',
+          left: 0,
+          right: 0,
+          background: 'red',
+          color: 'white',
+          padding: '16px',
+          textAlign: 'center',
+          fontSize: '20px',
+          fontWeight: 'bold',
+          animation: 'pulse 1s infinite',
+          zIndex: 9999,
+        }}>
+          🎤 RECORDING... Tap mic to stop
+        </div>
+      )}
+
+      {/* Full-screen resume overlay — appears when browser auto-stops the session */}
+      {showResumeHint && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'orange',
+          color: 'white',
+          padding: '32px',
+          borderRadius: '16px',
+          fontSize: '24px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          zIndex: 10000,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+        }}>
+          Recording paused<br />
+          <button
+            onClick={() => { setShowResumeHint(false); toggleMic() }}
+            style={{
+              marginTop: '16px',
+              padding: '16px 32px',
+              fontSize: '20px',
+              background: 'white',
+              color: 'orange',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}
+          >
+            TAP TO RESUME 🎤
+          </button>
+        </div>
+      )}
+
       <WorkerHeader />
       
       {!hasPermission ? (
@@ -243,22 +310,22 @@ export default function TriageScreen() {
             </div>
           ) : !isReady ? (
             <div className="camera-controls">
-              <button 
+              <button
                 className={`mic-btn ${isListening ? 'listening' : ''}`}
                 onClick={toggleMic}
                 aria-label={isListening ? "Stop listening" : "Start listening"}
               >
                 🎤
               </button>
-              
-              <button 
-                className="capture-btn" 
+
+              <button
+                className="capture-btn"
                 onClick={capturePhoto}
                 aria-label="Capture Photo"
               >
                 <div className="capture-btn-inner"></div>
               </button>
-              
+
               <div className="spacer-btn"></div>
             </div>
           ) : (

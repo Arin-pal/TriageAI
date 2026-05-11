@@ -31,6 +31,21 @@ function writeJson(file, data) {
 }
 
 app.post('/patients', (req, res) => {
+  const { transcript, lat, lng, color, mode } = req.body
+
+  // NOTE: triage runs client-side on each phone and calls Ollama directly.
+  // This endpoint only receives the completed result after the AI has decided.
+  // Images are never stored server-side — the payload contains text fields only.
+  console.log('=== PATIENT RECORD RECEIVED ===')
+  console.log('Time      :', new Date().toLocaleTimeString())
+  console.log('Color     :', color || 'UNKNOWN')
+  console.log('Mode      :', mode || 'unknown')
+  console.log('Transcript:', transcript ? transcript.substring(0, 100) + (transcript.length > 100 ? '…' : '') : '(none)')
+  console.log('Transcript length:', transcript ? transcript.length + ' chars' : '0')
+  console.log('GPS       :', (lat != null && lng != null) ? `${lat.toFixed(5)}, ${lng.toFixed(5)}` : 'NO GPS')
+  console.log('Image     : not stored server-side (processed on-device)')
+  console.log('===============================')
+
   const patients = readJson(PATIENTS_FILE)
   patients.push(req.body)
   writeJson(PATIENTS_FILE, patients)
@@ -63,6 +78,17 @@ app.delete('/patients', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() })
+})
+
+// Log relay — phones POST here so their logs appear in this terminal
+app.post('/log', (req, res) => {
+  const { message, data } = req.body
+  if (data && Object.keys(data).length > 0) {
+    console.log(`[PHONE] ${message}`, data)
+  } else {
+    console.log(`[PHONE] ${message}`)
+  }
+  res.json({ success: true })
 })
 
 app.listen(PORT, '0.0.0.0', () => {
