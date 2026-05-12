@@ -55,15 +55,15 @@ Important rules:
 - When unsure between RED and YELLOW → choose YELLOW
 - IMPORTANT: The 'action' and 'reasoning' fields must be translated to ${langName}. The 'color' must remain in English.
 
-Return ONLY this JSON, nothing else:
-{"color":"GREEN","action":"specific instruction max 10 words","reasoning":"one sentence","confidence":"high"}
-
-JSON:`;
+Respond ONLY with valid JSON in this exact format: {"color":"RED|YELLOW|GREEN|BLACK","action":"short action text","reasoning":"short reason","confidence":"high|medium|low"}
+No explanation, no markdown, no reasoning chain. JSON only:`;
 
   const body = {
-    model: 'gemma3:4b',
+    model: 'gemma4:e4b',
     prompt: prompt,
     stream: false,
+    think: false,
+    format: 'json',
     options: {
       temperature: 0.1,
       num_predict: 150
