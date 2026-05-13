@@ -3,26 +3,6 @@ const OLLAMA_URL = localStorage.getItem('ollama_url')
 
 export const isModelLoaded = true;
 
-// Fire-and-forget relay: sends a log message to the laptop server terminal.
-// Falls back to console.error silently if the server is unreachable.
-async function sendLog(message, data = {}) {
-  const ip = localStorage.getItem('laptop_ip')
-  if (!ip) {
-    console.error(`[TriageAI] ${message}`, data)
-    return
-  }
-  try {
-    await fetch(`http://${ip}:3000/log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, data }),
-      signal: AbortSignal.timeout(2000)
-    })
-  } catch (_) {
-    // Server unreachable — degrade gracefully to local console
-    console.error(`[TriageAI] ${message}`, data)
-  }
-}
 
 export async function analyzePatient(transcript, imageBase64) {
   const langCode = localStorage.getItem('app_language') || 'en-US';
@@ -77,13 +57,6 @@ No explanation, no markdown, no reasoning chain. JSON only:`;
   try {
     const ollamaUrl = localStorage.getItem('ollama_url') || window.location.origin + '/ollama-proxy';
 
-    sendLog('🤖 CALLING OLLAMA', {
-      description: transcript.substring(0, 100) + (transcript.length > 100 ? '...' : ''),
-      hasImage: !!body.images,
-      imageSize: body.images ? (body.images[0].length / 1024).toFixed(0) + ' KB' : null,
-      model: body.model
-    })
-
     const response = await fetch(`${ollamaUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -94,12 +67,6 @@ No explanation, no markdown, no reasoning chain. JSON only:`;
 
     const data = await response.json();
     const text = data.response.trim();
-
-    sendLog('✅ OLLAMA RESPONSE RECEIVED', {
-      hasResponse: !!text,
-      responseLength: text.length + ' chars',
-      preview: text.substring(0, 200)
-    })
 
     const jsonMatch = text.match(/\{[\s\S]*?\}/);
     if (!jsonMatch) throw new Error('No JSON in response: ' + text);

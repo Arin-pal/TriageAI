@@ -80,15 +80,28 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() })
 })
 
-// Log relay — phones POST here so their logs appear in this terminal
-app.post('/log', (req, res) => {
-  const { message, data } = req.body
-  if (data && Object.keys(data).length > 0) {
-    console.log(`[PHONE] ${message}`, data)
-  } else {
-    console.log(`[PHONE] ${message}`)
-  }
-  res.json({ success: true })
+
+app.get('/export/csv', (req, res) => {
+  const patients = readJson(PATIENTS_FILE) || []
+
+  let csv = 'id,color,mode,transcript,latitude,longitude,timestamp\n'
+
+  patients.forEach(p => {
+    const transcript = (p.transcript || '').replace(/"/g, '""').replace(/\n/g, ' ')
+    csv += [
+      p.id || '',
+      p.color || '',
+      p.mode || '',
+      `"${transcript}"`,
+      p.lat || '',
+      p.lng || '',
+      p.timestamp || ''
+    ].join(',') + '\n'
+  })
+
+  res.setHeader('Content-Type', 'text/csv')
+  res.setHeader('Content-Disposition', 'attachment; filename=triage-patients.csv')
+  res.send(csv)
 })
 
 app.listen(PORT, '0.0.0.0', () => {

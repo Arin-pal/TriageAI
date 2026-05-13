@@ -1,59 +1,133 @@
 # TriageAI
 
-**An AI-Powered Medical Triage Assistant for Mass Casualty Events**
+**AI-Powered Medical Triage for Mass Casualty Events**
 
-TriageAI is an offline-capable Progressive Web App (PWA) designed to aid emergency responders in classifying patients during mass casualty events using the standard START protocol. It utilizes on-device AI inference to function perfectly without any internet access.
+TriageAI is an offline-capable Progressive Web App (PWA) that helps emergency responders rapidly classify patients during mass casualty events using the standard START triage protocol. A paramedic points their phone camera at a patient, describes injuries by voice, and receives an immediate AI-generated triage colour — RED, YELLOW, GREEN, or BLACK — with spoken instructions.
 
-## How to Run Locally
+Inference runs on a laptop over a local WiFi hotspot via [Ollama](https://ollama.com) running **Gemma 4 E4B** — no cloud, no internet required.
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   The app will run locally over HTTPS. Note: It requires a secure context (HTTPS) or `localhost` to access device hardware like the camera and microphone.
+---
 
-## How to Deploy
+## Architecture
 
-To create a production-ready static build:
+```
+Phone (PWA)                         Laptop
+┌───────────────────────┐           ┌──────────────────────────────┐
+│  Camera + Mic          │  WiFi    │  Ollama  (gemma4:e4b)         │
+│  Speech-to-Text        │ ──────▶  │  Express server  :3000        │
+│  analyzePatient()      │ ◀──────  │  patients.json               │
+│  Result + TTS          │          │  commander.html  (Leaflet map)│
+└───────────────────────┘           └──────────────────────────────┘
+```
+
+- **Phones** run the React PWA, capture image + voice, send to Ollama, display result
+- **Laptop** runs Ollama for inference and the Express server for data sync
+- **Commander dashboard** polls the Express server every 5 s and renders a live Leaflet map
+
+---
+
+## Quick Start
+
+### 1 — Laptop setup
+
+```bash
+# Install Ollama from https://ollama.com, then pull the model:
+ollama pull gemma4:e4b
+
+# Start the triage data server:
+cd triageai-server
+npm install
+node server.js
+# Prints the local IP address on startup, e.g. http://192.168.1.10:3000
+```
+
+### 2 — Frontend (development)
+
+```bash
+npm install
+npm run dev
+# Serves over HTTPS on port 5174 — required for camera + mic APIs
+```
+
+### 3 — Connect phones
+
+1. Join the laptop's WiFi hotspot on each phone
+2. Open `https://<laptop-ip>:5174` in Chrome
+3. Go to **Settings → Ollama Server URL** and set `http://<laptop-ip>:11434`
+4. Tap **Test Connection** — should show "Gemma AI Ready"
+
+### 4 — Commander dashboard
+
+Open `http://<laptop-ip>:3000/commander.html` on the laptop or any device on the same network.
+
+The React app also has a commander view at `/commander` with an integrated Leaflet map.
+
+---
+
+## Production Build
+
 ```bash
 npm run build
+# Output in dist/ — serve over HTTPS (required for camera/mic)
 ```
-This generates the optimized bundle in the `dist/` directory, complete with Service Workers and caching policies required for a fully offline PWA installation.
 
-## How to Set Up the Laptop Server
+> **Note:** The Vite dev proxy (`/ollama-proxy`) is only available in dev mode. In production, phones must point directly to `http://<laptop-ip>:11434` in Settings.
 
-The TriageAI system includes an optional Commander Dashboard for incident commanders to monitor realtime patient data across a local network without relying on cloud infrastructure.
+---
 
-1. Navigate to the server directory:
-   ```bash
-   cd triageai-server
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the server:
-   ```bash
-   node server.js
-   ```
-4. Access the dashboard by opening `http://<laptop-ip>:3000/commander.html` in a web browser.
-5. In the TriageAI mobile app, go to Settings and enter the Laptop IP Address to synchronize data.
+## Features
 
-## Gemma 4 Features Utilized
+| Feature | Detail |
+|---|---|
+| **Multimodal AI triage** | Photo + voice transcript sent to Gemma 4 E4B via Ollama |
+| **START protocol enforcement** | Strict prompt forces RED / YELLOW / GREEN / BLACK output |
+| **Spoken result** | Web Speech API reads the action instruction aloud |
+| **Haptic feedback** | Vibration pattern differs per triage colour |
+| **Editable transcript** | Paramedic can correct speech-to-text before submitting |
+| **Continuous speech** | Auto-detects browser pause and prompts to resume |
+| **Commander map** | Live Leaflet map with colour-coded patient markers |
+| **CSV export** | Download full incident log from commander dashboard |
+| **Offline PWA** | Installs to home screen, works without internet after setup |
+| **Multilingual TTS** | English, Hindi, Arabic, Turkish, French |
+| **Demo mode** | Hidden unlock (tap version 5×) injects sample patients |
+| **Volunteer check-in** | Civilians can register skills and location |
 
-- **On-device inference (Gemma E2B):** TriageAI leverages the powerful MediaPipe Tasks GenAI API to run a 2B-parameter Gemma model fully on-device, meaning zero latency from cloud roundtrips and 100% offline functionality.
-- **Multimodal input (vision + voice):** Combines visual data from the device camera with the Web Speech API to provide the LLM with comprehensive multimodal contextual understanding of the patient's state.
-- **Reasoning mode (START protocol):** Uses strict few-shot prompting to force the LLM into a rigid analytical reasoning flow that enforces the global START (Simple Triage and Rapid Treatment) medical protocol.
-- **Multilingual output:** Integrates text-to-speech feedback, supporting multiple languages out of the box (English, Hindi, Arabic, Turkish, French) to guide responders natively.
+---
+
+## Project Structure
+
+```
+├── src/
+│   ├── ai/triageEngine.js        # Ollama API call, prompt, JSON parsing
+│   ├── pages/
+│   │   ├── TriageScreen.jsx      # Camera + mic + capture + analyze
+│   │   ├── ResultScreen.jsx      # Triage result, TTS, GPS save
+│   │   ├── CommanderDashboard.jsx# React commander view with Leaflet map
+│   │   ├── PatientList.jsx       # Phone-side patient log
+│   │   └── Settings.jsx          # Ollama URL, language, laptop IP
+│   └── utils/
+│       ├── patientStore.js       # localStorage + server sync
+│       └── syncManager.js        # pushPatientToLaptop (derives IP from Ollama URL)
+├── triageai-server/
+│   ├── server.js                 # Express: /patients /volunteers /health /export/csv
+│   └── public/commander.html     # Standalone Leaflet commander dashboard
+└── public/                       # PWA assets
+```
+
+---
+
+## Gemma 4 Features Used
+
+- **Gemma 4 E4B (edge-optimised 4B):** Runs on a laptop GPU/CPU via Ollama. Fits in ~9.6 GB, designed for edge deployment
+- **Multimodal vision + text:** Image base64 and voice transcript both sent in the same request (`body.images` + `body.prompt`)
+- **JSON-constrained output:** `format: 'json'` and `think: false` force deterministic structured output
+- **Multilingual reasoning:** Prompt instructs the model to translate `action` and `reasoning` fields into the paramedic's configured language while keeping `color` in English
+
+---
 
 ## Hackathon Tracks
 
-TriageAI is entering the following tracks:
-- **Health and Sciences** (Primary)
+- **Health and Sciences** (primary)
 - **Global Resilience**
 - **Safety**
 - **Technical Excellence**

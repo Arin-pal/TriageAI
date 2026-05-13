@@ -11,6 +11,7 @@ export default function TriageScreen() {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const recognitionRef = useRef(null)
+  const finalTranscriptRef = useRef('')
   const navigate = useNavigate()
   const { isModelLoaded } = useAI()
 
@@ -86,12 +87,22 @@ export default function TriageScreen() {
       recognition.interimResults = true
 
       recognition.onresult = (event) => {
-        let text = ''
-        for (let i = 0; i < event.results.length; i++) {
-          text += event.results[i][0].transcript + ' '
+        let interimTranscript = ''
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript
+          if (event.results[i].isFinal) {
+            finalTranscriptRef.current += t + ' '
+          } else {
+            interimTranscript += t
+          }
         }
-        setTranscript(text.trim())
+        setTranscript(finalTranscriptRef.current + interimTranscript)
       }
+
+      // Each call to recognition.start() resets event.results to an empty array.
+      // finalTranscriptRef is synced to the displayed transcript in toggleMic
+      // before start(), so onresult always builds on the correct baseline.
+      recognition.onstart = () => {}
 
       recognition.onend = () => {
         if (wasListeningRef.current) {
@@ -127,12 +138,18 @@ export default function TriageScreen() {
     if (!recognitionRef.current) return
 
     if (isListening) {
-      wasListeningRef.current = false  // user chose to stop — onend should not show hint
+      // User manually stopping
+      wasListeningRef.current = false
       recognitionRef.current.stop()
       setIsListening(false)
     } else {
+      // User starting (or resuming) recording.
+      // Sync the ref to whatever is currently displayed — this is the critical fix.
+      // Each new recognition session resets event.results, so onresult must rebuild
+      // from this baseline rather than from an empty string.
       wasListeningRef.current = true
       setShowResumeHint(false)
+      finalTranscriptRef.current = transcript ? transcript + ' ' : ''
       recognitionRef.current.start()
       setIsListening(true)
     }
@@ -287,10 +304,34 @@ export default function TriageScreen() {
             </div>
           )}
 
-          {/* Live Transcript text */}
+          {/* Live Transcript text — editable so users can correct speech errors */}
           {(transcript || isDemoMode) && (
             <div className="transcript-overlay">
-              <p>{isDemoMode ? 'Male approximately 40 years old, not breathing normally, large wound on left leg, unconscious' : transcript}</p>
+              {isDemoMode ? (
+                <p>Male approximately 40 years old, not breathing normally, large wound on left leg, unconscious</p>
+              ) : (
+                <textarea
+                  value={transcript}
+                  onChange={(e) => {
+                    setTranscript(e.target.value)
+                    // Keep ref in sync so tapping Resume doesn't overwrite manual edits
+                    finalTranscriptRef.current = e.target.value
+                  }}
+                  placeholder="Speak or type patient description..."
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '16px',
+                    background: 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    fontFamily: 'inherit',
+                    resize: 'vertical',
+                  }}
+                />
+              )}
             </div>
           )}
 

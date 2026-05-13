@@ -1,6 +1,27 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 import './CommanderDashboard.css'
+
+const COLOR_HEX = {
+  RED:    '#ff3b3b',
+  YELLOW: '#f5c518',
+  GREEN:  '#2ddd6e',
+  BLACK:  '#444444',
+}
+
+// Auto-fits the map viewport to the bounding box of all patients with GPS
+function FitBounds({ patients }) {
+  const map = useMap()
+  useEffect(() => {
+    const valid = patients.filter(p => p.lat && p.lng)
+    if (valid.length > 0) {
+      map.fitBounds(valid.map(p => [p.lat, p.lng]), { padding: [50, 50], maxZoom: 17 })
+    }
+  }, [patients, map])
+  return null
+}
 
 export default function CommanderDashboard() {
   const [patients, setPatients] = useState([])
@@ -94,10 +115,79 @@ export default function CommanderDashboard() {
       </header>
 
       <main className="commander-main">
+        {/* Leaflet map — auto-refreshes as patients state updates every 5s */}
+        <MapContainer
+          center={[21.0951, 79.0700]}
+          zoom={5}
+          style={{
+            height: '400px',
+            width: '100%',
+            marginBottom: '20px',
+            borderRadius: '8px',
+            border: '1px solid #333',
+          }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <FitBounds patients={patients} />
+          {patients.filter(p => p.lat && p.lng).map(p => (
+            <CircleMarker
+              key={p.id}
+              center={[p.lat, p.lng]}
+              radius={12}
+              pathOptions={{
+                color: COLOR_HEX[p.color] || '#888',
+                fillColor: COLOR_HEX[p.color] || '#888',
+                fillOpacity: 0.85,
+                weight: 2,
+              }}
+            >
+              <Popup>
+                <div style={{ minWidth: '180px' }}>
+                  <strong style={{ color: COLOR_HEX[p.color] || '#888' }}>{p.color}</strong><br />
+                  <span style={{ fontSize: '13px' }}>
+                    {p.transcript
+                      ? p.transcript.substring(0, 80) + (p.transcript.length > 80 ? '…' : '')
+                      : 'No description'}
+                  </span><br />
+                  <small style={{ color: '#666' }}>
+                    {p.timestamp ? new Date(p.timestamp).toLocaleTimeString() : 'No time'}
+                  </small>
+                </div>
+              </Popup>
+            </CircleMarker>
+          ))}
+        </MapContainer>
+
         <section className="dashboard-section">
           <div className="section-header">
             <h2>Incident Map & Patients</h2>
-            <button className="btn-danger-text" onClick={handleClearAll}>Clear All Data</button>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={() => {
+                  const ollamaUrl = localStorage.getItem('ollama_url')
+                  const ip = ollamaUrl
+                    ? ollamaUrl.match(/https?:\/\/([^:/]+)/)?.[1]
+                    : window.location.hostname
+                  window.location.href = `http://${ip}:3000/export/csv`
+                }}
+                style={{
+                  padding: '8px 16px',
+                  background: '#2ddd6e',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
+              >
+                📥 Download CSV
+              </button>
+              <button className="btn-danger-text" onClick={handleClearAll}>Clear All Data</button>
+            </div>
           </div>
 
           <div className="patient-grid">
