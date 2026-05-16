@@ -1,25 +1,16 @@
-// Resolve laptop IP from explicit setting, or extract host from the Ollama URL
-// so users only need to configure one field in Settings.
+// The phone loads this app FROM the laptop, so the laptop's IP
+// is always the hostname in the current page URL. This never goes stale
+// and requires zero configuration, even when the network changes.
 function getLaptopIP() {
-  const ip = localStorage.getItem('laptop_ip')
-  if (ip) return ip
-
-  const ollamaUrl = localStorage.getItem('ollama_url')
-  if (ollamaUrl) {
-    const match = ollamaUrl.match(/https?:\/\/([^:/]+)/)
-    if (match) return match[1]
-  }
-  return null
+  return window.location.hostname
 }
 
 export async function checkLaptopConnection() {
   const ip = getLaptopIP()
-  if (!ip) return false
-
   try {
     const controller = new AbortController()
     const id = setTimeout(() => controller.abort(), 2000)
-    const res = await fetch(`http://${ip}:3000/health`, {
+    const res = await fetch(`https://${ip}:3000/health`, {
       signal: controller.signal
     })
     clearTimeout(id)
@@ -31,16 +22,11 @@ export async function checkLaptopConnection() {
 
 export async function pushPatientToLaptop(patient) {
   const ip = getLaptopIP()
-  if (!ip) {
-    console.warn('No laptop IP configured, patient not synced')
-    return false
-  }
-
   try {
     const controller = new AbortController()
     const id = setTimeout(() => controller.abort(), 2000)
 
-    const response = await fetch(`http://${ip}:3000/patients`, {
+    const response = await fetch(`https://${ip}:3000/patients`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patient),

@@ -3,6 +3,17 @@ const cors = require('cors')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
+const https = require('https')
+
+function getLocalIP() {
+  const interfaces = os.networkInterfaces()
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) return iface.address
+    }
+  }
+  return 'localhost'
+}
 
 const app = express()
 const PORT = 3000
@@ -121,15 +132,14 @@ app.get('/export/csv', (req, res) => {
   res.send(csv)
 })
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('TriageAI Server running')
-  const nets = os.networkInterfaces()
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        console.log(`Local IP: ${net.address}`)
-        console.log(`Phones should connect to: http://${net.address}:${PORT}`)
-      }
-    }
-  }
+const httpsOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
+}
+
+https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
+  console.log('TriageAI Server running (HTTPS)')
+  console.log('Local IP:     ', getLocalIP())
+  console.log('Phones connect to: https://' + getLocalIP() + ':' + PORT)
+  console.log('NOTE: Accept the certificate warning in your browser once.')
 })

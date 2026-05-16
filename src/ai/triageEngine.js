@@ -1,6 +1,3 @@
-const OLLAMA_URL = localStorage.getItem('ollama_url')
-  || 'http://192.168.137.1:11434';
-
 export const isModelLoaded = true;
 
 

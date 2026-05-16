@@ -29,5 +29,27 @@
     "color": "RED",
     "action": "Immediate intervention required for severe bleeding and breathing issues.",
     "reasoning": "The description indicates severe bleeding from the head and breathing issues, suggesting immediate life-threatening concerns requiring rapid intervention."
+  },
+  {
+    "id": "0833858a-f88e-4d57-ae79-faa5f914debc",
+    "timestamp": 1778921823721,
+    "lat": 21.0951456,
+    "lng": 79.0699782,
+    "transcript": "     mike mike mike testing mike testing 123 mike testing 123 ",
+    "mode": "ai",
+    "color": "GREEN",
+    "action": "Monitor and reassure",
+    "reasoning": "The patient is speaking in a coherent, albeit nonsensical, manner, indicating consciousness and ability to communicate, suggesting a low level of immediate threat."
+  },
+  {
+    "id": "bdc7d7d6-8679-4128-8ea8-a2e3ca21eb21",
+    "timestamp": 1778927406629,
+    "lat": 21.0951456,
+    "lng": 79.0699782,
+    "transcript": " final final final check final check     think think think think everything is fine think think think think everything is fine just think everything is fine just think everything is fine just confirm think everything is fine just confirming ",
+    "mode": "ai",
+    "color": "GREEN",
+    "action": "Monitor and reassure",
+    "reasoning": "The patient is verbally confirming that everything is fine and is conscious, indicating no immediate life threat."
   }
 ]

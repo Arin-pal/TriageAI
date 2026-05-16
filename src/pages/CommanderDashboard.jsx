@@ -31,10 +31,9 @@ export default function CommanderDashboard() {
   const [error, setError] = useState(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
 
-  const ollamaUrl = localStorage.getItem('ollama_url')
-  const derivedIp = ollamaUrl ? ollamaUrl.match(/https?:\/\/([^:/]+)/)?.[1] : null
-  const laptopIp = localStorage.getItem('laptop_ip') || derivedIp || 'localhost'
-  const SERVER_URL = `http://${laptopIp}:3000`
+  // Always co-located: the Vite app and the Express server run on the same laptop.
+  // window.location.hostname gives the correct IP on any device, zero config required.
+  const SERVER_URL = `https://${window.location.hostname}:3000`
 
   const assignVolunteer = async (patientId, volunteerId) => {
     try {
@@ -192,11 +191,7 @@ export default function CommanderDashboard() {
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <button
                 onClick={() => {
-                  const ollamaUrl = localStorage.getItem('ollama_url')
-                  const ip = ollamaUrl
-                    ? ollamaUrl.match(/https?:\/\/([^:/]+)/)?.[1]
-                    : window.location.hostname
-                  window.location.href = `http://${ip}:3000/export/csv`
+                  window.location.href = `https://${window.location.hostname}:3000/export/csv`
                 }}
                 style={{
                   padding: '8px 16px',
