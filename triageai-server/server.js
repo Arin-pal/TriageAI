@@ -81,6 +81,23 @@ app.get('/health', (req, res) => {
 })
 
 
+app.patch('/patients/:id', (req, res) => {
+  const patients = readJson(PATIENTS_FILE) || []
+  const patient = patients.find(p => p.id === req.params.id)
+
+  if (!patient) {
+    return res.status(404).json({ success: false, error: 'Patient not found' })
+  }
+
+  if (req.body.assignedVolunteerId !== undefined) {
+    patient.assignedVolunteerId = req.body.assignedVolunteerId
+  }
+
+  writeJson(PATIENTS_FILE, patients)
+  console.log('Patient', req.params.id, 'assigned to volunteer', req.body.assignedVolunteerId)
+  res.json({ success: true, patient })
+})
+
 app.get('/export/csv', (req, res) => {
   const patients = readJson(PATIENTS_FILE) || []
 

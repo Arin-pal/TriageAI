@@ -29,9 +29,25 @@ export default function CommanderDashboard() {
   const [lastSynced, setLastSynced] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState(null)
+  const [autoRefresh, setAutoRefresh] = useState(true)
 
-  const laptopIp = localStorage.getItem('laptop_ip') || 'localhost'
+  const ollamaUrl = localStorage.getItem('ollama_url')
+  const derivedIp = ollamaUrl ? ollamaUrl.match(/https?:\/\/([^:/]+)/)?.[1] : null
+  const laptopIp = localStorage.getItem('laptop_ip') || derivedIp || 'localhost'
   const SERVER_URL = `http://${laptopIp}:3000`
+
+  const assignVolunteer = async (patientId, volunteerId) => {
+    try {
+      await fetch(`${SERVER_URL}/patients/${patientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedVolunteerId: volunteerId }),
+      })
+      fetchData()
+    } catch (e) {
+      console.error('Failed to assign volunteer:', e)
+    }
+  }
 
   const fetchData = async () => {
     setIsRefreshing(true)
@@ -66,9 +82,10 @@ export default function CommanderDashboard() {
 
   useEffect(() => {
     fetchData()
+    if (!autoRefresh) return
     const interval = setInterval(fetchData, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [autoRefresh])
 
   const handleClearAll = async () => {
     if (!window.confirm('CRITICAL: Delete all data from the central server? This cannot be undone.')) return
@@ -107,6 +124,14 @@ export default function CommanderDashboard() {
         </div>
 
         <div className="header-actions">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer', userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+            />
+            Auto-refresh (5s)
+          </label>
           <span className={`sync-status ${isRefreshing ? 'syncing' : ''}`}>
             {error ? '❌ Server Offline' : `Last sync: ${lastSynced?.toLocaleTimeString() || 'Never'}`}
           </span>
@@ -206,6 +231,28 @@ export default function CommanderDashboard() {
                     <span className="location">📍 {p.lat?.toFixed(4)}, {p.lng?.toFixed(4)}</span>
                     <span className="source">📡 Source: {p.mode?.toUpperCase()}</span>
                   </div>
+                  <select
+                    value={p.assignedVolunteerId || ''}
+                    onChange={(e) => assignVolunteer(p.id, e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '10px',
+                      background: '#111',
+                      color: 'white',
+                      border: '1px solid #444',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">— Assign volunteer —</option>
+                    {volunteers.map(v => (
+                      <option key={v.id} value={v.id}>
+                        Vol-{v.id?.substring(0, 4)} ({(v.skills || []).join(', ') || 'No skills listed'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               ))
             )}
