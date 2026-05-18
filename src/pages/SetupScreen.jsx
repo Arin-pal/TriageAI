@@ -9,6 +9,8 @@ const DEFAULT_OLLAMA_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:11434'
   : window.location.origin + '/ollama-proxy'
 
+const SERVER_HEALTH_URL = `https://${window.location.hostname}:3000/health`
+
 export default function SetupScreen() {
   const navigate = useNavigate()
   const [ollamaUrl, setOllamaUrl] = useState(
@@ -16,6 +18,9 @@ export default function SetupScreen() {
   )
   const [connStatus, setConnStatus] = useState('idle') // idle | testing | success | fail
   const [connMessage, setConnMessage] = useState('')
+  const [certAuthorized, setCertAuthorized] = useState(
+    !!localStorage.getItem('cert_accepted')
+  )
 
   // Skip to "/" if setup is already complete
   useEffect(() => {
@@ -23,6 +28,11 @@ export default function SetupScreen() {
       navigate('/', { replace: true })
     }
   }, [navigate])
+
+  const handleCertAuthorized = () => {
+    localStorage.setItem('cert_accepted', 'true')
+    setCertAuthorized(true)
+  }
 
   const handleUrlChange = (e) => {
     const val = e.target.value
@@ -62,32 +72,44 @@ export default function SetupScreen() {
       </header>
 
       <section className="setup-steps">
-        {/* Step 1: Accept Security Certificate */}
-        <div className="setup-step card">
-          <div className="step-header">
-            <span className="step-number">1</span>
-            <h2>Accept Security Certificate</h2>
-          </div>
-          <p className="step-desc">
-            Before connecting, you must accept the local security certificate once.
-          </p>
-          <div className="setup-btn-row">
-            <button
-              className="btn btn-outline btn-full"
-              onClick={() => window.open(`https://${window.location.hostname}:3000/health`, '_blank')}
-            >
-              Accept Certificate
-            </button>
-          </div>
-          <p className="setup-url-hint" style={{ marginTop: '12px' }}>
-            In the new tab, tap <strong>Advanced → Proceed</strong>. Then come back here.
-          </p>
-        </div>
 
-        {/* Step 2: Connect to AI */}
+        {/* Step 1: Certificate — shown until authorized */}
+        {!certAuthorized && (
+          <div className="setup-step card">
+            <div className="step-header">
+              <span className="step-number">1</span>
+              <h2>One-time security setup needed</h2>
+            </div>
+            <p className="step-desc">
+              Your browser needs to authorize the local server certificate once before connecting.
+            </p>
+            <div className="setup-btn-row">
+              <button
+                className="btn btn-outline btn-full"
+                onClick={() => window.open(SERVER_HEALTH_URL, '_blank')}
+              >
+                Tap here to authorize →
+              </button>
+            </div>
+            <p className="setup-url-hint" style={{ marginTop: '12px' }}>
+              In the new tab, tap <strong>Advanced → Proceed</strong>. Then come back and tap the button below.
+            </p>
+            <div className="setup-btn-row" style={{ marginTop: '8px' }}>
+              <button
+                className="btn btn-primary btn-full"
+                onClick={handleCertAuthorized}
+              >
+                I've authorized it — continue →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Connect to AI — shown only after cert is authorized */}
+        {certAuthorized && (
         <div className={`setup-step card ${connStatus === 'success' ? 'step-complete' : ''}`}>
           <div className="step-header">
-            <span className="step-number">2</span>
+            <span className="step-number">1</span>
             <h2>Connect to AI</h2>
             {connStatus === 'success' && <span className="step-check">✅</span>}
           </div>
@@ -141,6 +163,8 @@ export default function SetupScreen() {
             )}
           </div>
         </div>
+        )}
+
       </section>
     </main>
   )
