@@ -1,36 +1,22 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { analyzePatient } from '../ai/triageEngine'
 import WorkerHeader from '../components/WorkerHeader'
 import WorkerBottomNav from '../components/WorkerBottomNav'
 import { getAllPatients, clearAllPatients } from '../utils/patientStore'
 import './Settings.css'
 
 export default function Settings() {
-  const navigate = useNavigate()
-  // AI is always ready via Ollama — no loading state needed
-  
   const [language, setLanguage] = useState(localStorage.getItem('app_language') || 'en-US')
   const [patientCount, setPatientCount] = useState(0)
   const [storageUsage, setStorageUsage] = useState('0 KB')
-  const [userMode, setUserMode] = useState(localStorage.getItem('user_mode') || 'worker')
-  // On localhost: connect directly to Ollama. On a network IP: use Vite proxy to avoid Safari mixed-content.
-  // NOTE: /ollama-proxy only works in dev mode (npm run dev).
-  const defaultOllamaUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:11434'
-    : window.location.origin + '/ollama-proxy'
-  const [ollamaUrl, setOllamaUrl] = useState(localStorage.getItem('ollama_url') || defaultOllamaUrl)
+  const [ollamaUrl, setOllamaUrl] = useState(
+    localStorage.getItem('ollama_url') || `http://${window.location.hostname}:11434`
+  )
   const [aiConnStatus, setAiConnStatus] = useState('idle') // idle | testing | success | fail
-  const [clickCount, setClickCount] = useState(0)
-  const [demoMode, setDemoMode] = useState(localStorage.getItem('demo_mode') === 'true')
-  const [isTesting, setIsTesting] = useState(false)
 
   useEffect(() => {
-    // Load patient count
     const patients = getAllPatients()
     setPatientCount(patients.length)
 
-    // Calculate raw localStorage size estimation
     let total = 0
     for (let key in localStorage) {
       if (localStorage.hasOwnProperty(key)) {
@@ -55,10 +41,7 @@ export default function Settings() {
   const handleTestOllama = async () => {
     setAiConnStatus('testing')
     try {
-      const fallback = window.location.hostname === 'localhost'
-        ? 'http://localhost:11434'
-        : window.location.origin + '/ollama-proxy'
-      const url = ollamaUrl.trim() || fallback
+      const url = ollamaUrl.trim() || `http://${window.location.hostname}:11434`
       const response = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(5000) })
       setAiConnStatus(response.ok ? 'success' : 'fail')
     } catch {
@@ -66,85 +49,12 @@ export default function Settings() {
     }
   }
 
-  const handleVersionClick = async () => {
-    if (clickCount >= 4) {
-      setDemoMode(true)
-      localStorage.setItem('demo_mode', 'true')
-
-      // Inject 6 fake patients near Mumbai (Gateway of India area)
-      const fakePatients = [
-        { id: crypto.randomUUID(), color: 'RED', action: 'Immediate tourniquet', reasoning: 'Severe bleeding', transcript: 'Bleeding heavily from the leg', timestamp: Date.now() - 1000 * 60 * 5, lat: 18.9220, lng: 72.8346, mode: 'ai' },
-        { id: crypto.randomUUID(), color: 'YELLOW', action: 'Splint and monitor', reasoning: 'Fractured radius', transcript: 'My arm hurts really bad', timestamp: Date.now() - 1000 * 60 * 15, lat: 18.9225, lng: 72.8340, mode: 'ai' },
-        { id: crypto.randomUUID(), color: 'GREEN', action: 'Bandage and direct to green zone', reasoning: 'Minor lacerations', transcript: 'I cut my hand on glass', timestamp: Date.now() - 1000 * 60 * 45, lat: 18.9215, lng: 72.8350, mode: 'manual' },
-        { id: crypto.randomUUID(), color: 'BLACK', action: 'Do not resuscitate, move on', reasoning: 'Unsurvivable head trauma', transcript: 'Unresponsive, pulseless', timestamp: Date.now() - 1000 * 60 * 60, lat: 18.9230, lng: 72.8335, mode: 'ai' },
-        { id: crypto.randomUUID(), color: 'RED', action: 'Airway management immediately', reasoning: 'Inadequate respiration rate', transcript: 'Gasping for air, cyanotic', timestamp: Date.now() - 1000 * 60 * 90, lat: 18.9210, lng: 72.8330, mode: 'ai' },
-        { id: crypto.randomUUID(), color: 'GREEN', action: 'Provide water and rest', reasoning: 'Fatigued but ambulatory', transcript: 'I am so tired and thirsty', timestamp: Date.now() - 1000 * 60 * 120, lat: 18.9240, lng: 72.8360, mode: 'manual' }
-      ]
-
-      // Write to localStorage so phone-local views work immediately
-      const existing = JSON.parse(localStorage.getItem('triage_patients') || '[]')
-      localStorage.setItem('triage_patients', JSON.stringify([...fakePatients, ...existing]))
-
-      // Also POST to the Express server so demo patients appear on the Commander map
-      const hostname = window.location.hostname
-      for (const patient of fakePatients) {
-        try {
-          await fetch(`https://${hostname}:3000/patients`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(patient)
-          })
-        } catch (e) {
-          // silently fail if server is unreachable
-        }
-      }
-
-      alert('Demo Mode Unlocked! Fake data loaded.')
-      setClickCount(0)
-      window.location.reload()
-    } else {
-      setClickCount(c => c + 1)
-    }
-  }
-  
-  const handleTestFullFlow = async () => {
-    setIsTesting(true)
-    const testTranscript = "Adult male, unconscious, not breathing normally, bleeding from head"
-    
-    try {
-      const result = await analyzePatient(testTranscript)
-      navigate('/worker/result', { 
-        state: { 
-          result, 
-          transcript: testTranscript,
-          manualMode: false 
-        } 
-      })
-    } catch (err) {
-      console.error('Test flow failed:', err)
-      alert('AI Analysis failed during test.')
-    } finally {
-      setIsTesting(false)
-    }
-  }
-
-  const disableDemoMode = () => {
-    setDemoMode(false)
-    localStorage.removeItem('demo_mode')
-    window.location.reload()
-  }
-
-  const handleSwitchMode = () => {
-    navigate('/')
-  }
-
   const handleClearData = () => {
     const conf = window.confirm('Are you sure you want to clear all patient data? This cannot be undone.')
     if (conf) {
       clearAllPatients()
       setPatientCount(0)
-      
-      // Recalculate storage footprint
+
       let total = 0
       for (let key in localStorage) {
         if (localStorage.hasOwnProperty(key)) {
@@ -204,19 +114,7 @@ export default function Settings() {
           </button>
         </section>
 
-        {/* 3. User Mode */}
-        <section className="settings-section">
-          <h2>User Mode</h2>
-          <div className="settings-row">
-            <span>Current Identity:</span>
-            <span style={{ fontWeight: 800 }}>{userMode.charAt(0).toUpperCase() + userMode.slice(1)}</span>
-          </div>
-          <button className="btn btn-outline btn-full mt-3" onClick={handleSwitchMode}>
-            Switch mode
-          </button>
-        </section>
-
-        {/* 4. Storage */}
+        {/* 3. Storage */}
         <section className="settings-section">
           <h2>Storage</h2>
           <div className="settings-row">
@@ -232,32 +130,10 @@ export default function Settings() {
           </button>
         </section>
 
-        {/* 6. Diagnostics */}
-        <section className="settings-section">
-          <h2>Diagnostics</h2>
-          <p className="settings-desc">Verify AI performance with a pre-set emergency scenario.</p>
-          <button 
-            className="btn btn-outline btn-full mt-3" 
-            onClick={handleTestFullFlow}
-            disabled={isTesting}
-          >
-            {isTesting ? 'Analyzing…' : 'Test Full Flow (AI Scenario)'}
-          </button>
-        </section>
-
-        {/* 6. About */}
+        {/* 4. About */}
         <section className="settings-section about-section">
           <div className="about-content">
-            <p className="version-text" onClick={handleVersionClick} style={{ cursor: 'pointer' }}>TriageAI v1.0.0</p>
-            {demoMode && (
-              <button 
-                className="btn btn-outline" 
-                style={{ borderColor: 'var(--color-warning)', color: 'var(--color-warning)', padding: '6px 12px', fontSize: '0.9rem', marginBottom: '16px' }} 
-                onClick={disableDemoMode}
-              >
-                Disable Demo Mode
-              </button>
-            )}
+            <p className="version-text">TriageAI v1.0.0</p>
             <p>Works fully offline — no internet required</p>
             <p>Built for Gemma 4 Good Hackathon</p>
           </div>
@@ -265,7 +141,6 @@ export default function Settings() {
 
       </main>
 
-      {/* Settings technically acts as a primary tab in the worker flow */}
       <WorkerBottomNav />
     </div>
   )

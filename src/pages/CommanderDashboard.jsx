@@ -146,17 +146,58 @@ export default function CommanderDashboard() {
                 weight: 2,
               }}
             >
-              <Popup>
-                <div style={{ minWidth: '180px' }}>
-                  <strong style={{ color: COLOR_HEX[p.color] || '#888' }}>{p.color}</strong><br />
-                  <span style={{ fontSize: '13px' }}>
-                    {p.transcript
-                      ? p.transcript.substring(0, 80) + (p.transcript.length > 80 ? '…' : '')
-                      : 'No description'}
-                  </span><br />
-                  <small style={{ color: '#666' }}>
-                    {p.timestamp ? new Date(p.timestamp).toLocaleTimeString() : 'No time'}
-                  </small>
+              <Popup maxWidth={300}>
+                <div style={{ width: '280px', fontFamily: 'sans-serif' }}>
+                  {p.photo && (
+                    <img
+                      src={p.photo}
+                      alt="Patient"
+                      style={{
+                        width: '100%',
+                        height: '160px',
+                        objectFit: 'cover',
+                        borderRadius: '6px',
+                        marginBottom: '10px'
+                      }}
+                    />
+                  )}
+                  <div style={{
+                    background: COLOR_HEX[p.color] || '#888',
+                    color: 'white',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    display: 'inline-block',
+                    marginBottom: '8px'
+                  }}>
+                    {p.color}
+                  </div>
+                  {p.action && (
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '6px' }}>
+                      {p.action}
+                    </div>
+                  )}
+                  {p.transcript && p.transcript.trim() && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#555',
+                      marginBottom: '6px',
+                      fontStyle: 'italic',
+                      borderLeft: '3px solid #ddd',
+                      paddingLeft: '8px'
+                    }}>
+                      {p.transcript.trim()}
+                    </div>
+                  )}
+                  {p.reasoning && (
+                    <div style={{ fontSize: '12px', color: '#444', marginBottom: '6px' }}>
+                      {p.reasoning}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '11px', color: '#999', borderTop: '1px solid #eee', paddingTop: '6px' }}>
+                    📍 {p.lat?.toFixed(5)}, {p.lng?.toFixed(5)}<br/>
+                    🕐 {p.timestamp ? new Date(p.timestamp).toLocaleTimeString() : 'Unknown time'}
+                  </div>
                 </div>
               </Popup>
             </CircleMarker>

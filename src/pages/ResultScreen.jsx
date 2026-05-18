@@ -83,12 +83,13 @@ export default function ResultScreen() {
       }
     }
 
-    // 3. Call savePatient() with all data
+    // 3. Call savePatient() with all data (photo is the full data URL for server storage)
     savePatient({
       color: result.color,
       action: result.action,
       reasoning: result.reasoning,
       transcript: state?.transcript || '',
+      photo: state?.photo || null,
       lat,
       lng,
       mode: manualMode ? 'manual' : 'ai'

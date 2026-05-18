@@ -25,12 +25,10 @@ export default function TriageScreen() {
   // wasListeningRef is needed because onend is registered once at mount —
   // reading isListening state there would always return its stale initial value.
   const wasListeningRef = useRef(false)
-  
+
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzeSeconds, setAnalyzeSeconds] = useState(0)
   const analyzeTimerRef = useRef(null)
-
-  const isDemoMode = localStorage.getItem('demo_mode') === 'true'
 
   // Request Wake Lock to prevent screen sleep during triage
   useEffect(() => {
@@ -52,32 +50,26 @@ export default function TriageScreen() {
     }
   }, [])
 
-  // Initialize camera
+  // Stop camera stream on unmount
   useEffect(() => {
-    if (isDemoMode) {
-      setHasPermission(true)
-    }
-
     return () => {
       if (activeStreamRef.current) {
         activeStreamRef.current.getTracks().forEach(track => track.stop())
       }
     }
-  }, [isDemoMode])
+  }, [])
 
   const handleCameraGranted = (stream) => {
     activeStreamRef.current = stream
     setHasPermission(true)
-    // The video element might not be rendered yet, so we use a small timeout or just let a standard useEffect pick up the stream. 
-    // Since we transition state to hasPermission=true, the video will mount on next render.
   }
 
   // Bind stream to video once it renders
   useEffect(() => {
-    if (hasPermission && videoRef.current && activeStreamRef.current && !isDemoMode) {
+    if (hasPermission && videoRef.current && activeStreamRef.current) {
       videoRef.current.srcObject = activeStreamRef.current
     }
-  }, [hasPermission, isDemoMode])
+  }, [hasPermission])
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -123,16 +115,22 @@ export default function TriageScreen() {
   }, [])
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current
-      const canvas = canvasRef.current
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
-      setCapturedImage(dataUrl)
-    }
+    if (!videoRef.current) return
+    const video = videoRef.current
+    const canvas = document.createElement('canvas')
+
+    // Resize to max 400px wide, preserving aspect ratio
+    const maxWidth = 400
+    const scale = Math.min(1, maxWidth / video.videoWidth)
+    canvas.width = video.videoWidth * scale
+    canvas.height = video.videoHeight * scale
+
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    // Compress to 60% JPEG quality (~50KB vs ~2MB at full res)
+    const imageData = canvas.toDataURL('image/jpeg', 0.6)
+    setCapturedImage(imageData)
   }
 
   const toggleMic = () => {
@@ -169,7 +167,7 @@ export default function TriageScreen() {
 
   const handleAnalyze = async () => {
     if (!isModelLoaded) {
-      navigate('/worker/result', { state: { manualMode: true, transcript } })
+      navigate('/worker/result', { state: { manualMode: true, transcript, photo: capturedImage } })
       return
     }
 
@@ -190,39 +188,16 @@ export default function TriageScreen() {
       clearInterval(analyzeTimerRef.current)
       analyzeTimerRef.current = null
       if (!result || result.color === 'ERROR') {
-        navigate('/worker/result', { state: { manualMode: true, transcript } })
+        navigate('/worker/result', { state: { manualMode: true, transcript, photo: capturedImage } })
         return
       }
-      navigate('/worker/result', { state: { result, transcript } })
+      navigate('/worker/result', { state: { result, transcript, photo: capturedImage } })
     } catch (err) {
       console.error('AI Analysis threw an error:', err)
       clearInterval(analyzeTimerRef.current)
       analyzeTimerRef.current = null
-      navigate('/worker/result', { state: { manualMode: true, transcript } })
+      navigate('/worker/result', { state: { manualMode: true, transcript, photo: capturedImage } })
     }
-  }
-
-  const handleDemoAnalyze = () => {
-    setIsAnalyzing(true)
-    setAnalyzeSeconds(0)
-    const timer = setInterval(() => setAnalyzeSeconds(s => s + 1), 1000)
-    
-    // Simulate fake processing time for demo (4 seconds)
-    setTimeout(() => {
-      clearInterval(timer)
-      navigate('/worker/result', { 
-        state: { 
-          result: {
-            color: 'RED',
-            action: 'Control bleeding, airway management now',
-            reasoning: 'Unconscious with respiratory compromise',
-            confidence: 'high'
-          },
-          transcript: 'Male approximately 40 years old, not breathing normally, large wound on left leg, unconscious',
-          manualMode: false
-        }
-      })
-    }, 4000)
   }
 
   const isReady = capturedImage && transcript
@@ -289,148 +264,129 @@ export default function TriageScreen() {
       )}
 
       <WorkerHeader />
-      
+
       {!hasPermission ? (
         <CameraPermission onGranted={handleCameraGranted} />
       ) : (
         <main className="camera-main page-enter">
-        <div className="camera-view">
-          {/* Live rear camera feed or Demo Block */}
-          {isDemoMode ? (
-            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#333', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
-                 <div style={{ fontSize: '5rem' }}>🧍</div>
-                 <div style={{ marginTop: '16px', fontSize: '1.2rem', color: '#fff', fontWeight: 'bold' }}>Simulated Patient Image</div>
-              </div>
-            </div>
-          ) : (
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline 
-              muted 
+          <div className="camera-view">
+            {/* Live rear camera feed */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
               className="video-feed"
             />
-          )}
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-          {/* Captured image thumbnail */}
-          {capturedImage && (
-            <div className="thumbnail-container" style={{ position: 'relative' }}>
-              <img src={capturedImage} alt="Captured patient" className="thumbnail-img" />
-              <div style={{
-                position: 'absolute',
-                bottom: '4px',
-                left: '4px',
-                background: 'rgba(0,0,0,0.7)',
-                color: 'white',
-                fontSize: '10px',
-                padding: '2px 6px',
-                borderRadius: '4px',
-              }}>
-                🤖 AI vision
+            {/* Captured image thumbnail */}
+            {capturedImage && (
+              <div className="thumbnail-container" style={{ position: 'relative' }}>
+                <img src={capturedImage} alt="Captured patient" className="thumbnail-img" />
+                <div style={{
+                  position: 'absolute',
+                  bottom: '4px',
+                  left: '4px',
+                  background: 'rgba(0,0,0,0.7)',
+                  color: 'white',
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}>
+                  🤖 AI vision
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Live Transcript text — editable so users can correct speech errors */}
-          {(transcript || isDemoMode) && (
-            <div className="transcript-overlay">
-              {isDemoMode ? (
-                <p>Male approximately 40 years old, not breathing normally, large wound on left leg, unconscious</p>
-              ) : (
-                <textarea
-                  value={transcript}
-                  onChange={(e) => {
-                    setTranscript(e.target.value)
-                    // Keep ref in sync so tapping Resume doesn't overwrite manual edits
-                    finalTranscriptRef.current = e.target.value
-                  }}
-                  placeholder="Speak or type patient description..."
-                  rows={4}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    fontSize: '16px',
-                    background: 'rgba(255,255,255,0.1)',
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '8px',
-                    fontFamily: 'inherit',
-                    resize: 'vertical',
-                  }}
-                />
-              )}
-            </div>
-          )}
+            {/* Ready Banner */}
+            {isReady && !isAnalyzing && (
+              <div className="ready-banner">
+                Ready to Analyze ✓
+              </div>
+            )}
 
-          {/* Ready Banner */}
-          {((isReady && !isAnalyzing && !isDemoMode) || isDemoMode) && (
-            <div className="ready-banner">
-              Ready to Analyze ✓
-            </div>
-          )}
+            {/* Bottom Controls / Analyze Button */}
+            {!isReady ? (
+              <div className="camera-controls">
+                <button
+                  className={`mic-btn ${isListening ? 'listening' : ''}`}
+                  onClick={toggleMic}
+                  aria-label={isListening ? "Stop listening" : "Start listening"}
+                >
+                  🎤
+                </button>
 
-          {/* Bottom Controls / Analyze Button */}
-          {isDemoMode ? (
-            <div className="analyze-action-container">
-              <button className="analyze-btn" style={{ background: 'var(--color-warning)', color: '#000' }} onClick={handleDemoAnalyze}>
-                Simulate Patient
-              </button>
-            </div>
-          ) : !isReady ? (
-            <div className="camera-controls">
-              <button
-                className={`mic-btn ${isListening ? 'listening' : ''}`}
-                onClick={toggleMic}
-                aria-label={isListening ? "Stop listening" : "Start listening"}
-              >
-                🎤
-              </button>
+                <button
+                  className="capture-btn"
+                  onClick={capturePhoto}
+                  aria-label="Capture Photo"
+                >
+                  <div className="capture-btn-inner"></div>
+                </button>
 
-              <button
-                className="capture-btn"
-                onClick={capturePhoto}
-                aria-label="Capture Photo"
-              >
-                <div className="capture-btn-inner"></div>
-              </button>
-
-              <div className="spacer-btn"></div>
-            </div>
-          ) : (
-            <div className="analyze-action-container">
-              <button className="analyze-btn" onClick={handleAnalyze}>
-                Analyze Patient
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Fullscreen Loading Overlay */}
-        {isAnalyzing && (
-          <div className="analysis-overlay">
-            <div className="analysis-pulse-circle"></div>
-            <p className="analysis-text">Analyzing patient...</p>
-            <p className="analysis-timer">{analyzeSeconds}s</p>
-            <button
-              onClick={cancelAnalysis}
-              style={{
-                marginTop: '24px',
-                padding: '12px 32px',
-                background: 'transparent',
-                color: 'rgba(255,255,255,0.7)',
-                border: '1px solid rgba(255,255,255,0.3)',
-                borderRadius: '8px',
-                fontSize: '16px',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
+                <div className="spacer-btn"></div>
+              </div>
+            ) : (
+              <div className="analyze-action-container">
+                <button className="analyze-btn" onClick={handleAnalyze}>
+                  Analyze Patient
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </main>
+
+          {/* Transcript — always visible below the camera, never overlapped by the recording banner */}
+          <div style={{ padding: '12px 16px 0' }}>
+            <textarea
+              value={transcript}
+              onChange={(e) => {
+                setTranscript(e.target.value)
+                // Keep ref in sync so tapping Resume doesn't overwrite manual edits
+                finalTranscriptRef.current = e.target.value
+              }}
+              placeholder="Speak or type patient description..."
+              style={{
+                width: '100%',
+                minHeight: '80px',
+                padding: '12px',
+                fontSize: '16px',
+                background: '#1a1a1a',
+                color: '#ffffff',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                boxSizing: 'border-box',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Fullscreen Loading Overlay */}
+          {isAnalyzing && (
+            <div className="analysis-overlay">
+              <div className="analysis-pulse-circle"></div>
+              <p className="analysis-text">Analyzing patient...</p>
+              <p className="analysis-timer">{analyzeSeconds}s</p>
+              <button
+                onClick={cancelAnalysis}
+                style={{
+                  marginTop: '24px',
+                  padding: '12px 32px',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.7)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </main>
       )}
 
       <WorkerBottomNav />

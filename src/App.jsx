@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import ModeSelect from './pages/ModeSelect'
 import WorkerHome from './pages/WorkerHome'
 import TriageScreen from './pages/TriageScreen'
 import ResultScreen from './pages/ResultScreen'
@@ -85,8 +84,6 @@ export default function App() {
     )
   }
 
-  const isDemoMode = localStorage.getItem('demo_mode') === 'true'
-
   return (
     <>
       {isOffline && (
@@ -94,13 +91,8 @@ export default function App() {
           Offline — AI features via local network
         </div>
       )}
-      {isDemoMode && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)', fontSize: '6rem', color: 'rgba(230, 168, 23, 0.15)', fontWeight: '900', pointerEvents: 'none', zIndex: 99998, whiteSpace: 'nowrap', userSelect: 'none' }}>
-          DEMO MODE
-        </div>
-      )}
       <Routes>
-        <Route path="/" element={<ModeSelect />} />
+        <Route path="/" element={<WorkerHome />} />
         <Route path="/worker" element={<WorkerHome />} />
         <Route path="/worker/triage" element={<TriageScreen />} />
         <Route path="/worker/result" element={<ResultScreen />} />
