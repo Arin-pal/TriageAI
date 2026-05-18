@@ -66,14 +66,14 @@ export default function ResultScreen() {
     let lat = null
     let lng = null
 
-    // 1 & 2. Get GPS via navigator.geolocation (5 sec timeout)
+    // 1 & 2. Get GPS via navigator.geolocation (15 sec timeout, low accuracy for speed indoors)
     if ('geolocation' in navigator) {
       try {
         const position = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: false,
-            timeout: 5000,
-            maximumAge: 10000
+            timeout: 15000,
+            maximumAge: 30000
           })
         })
         lat = position.coords.latitude

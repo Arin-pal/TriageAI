@@ -56,6 +56,7 @@ function spreadOverlappingPatients(patients) {
 }
 
 export default function CommanderDashboard() {
+  const [certAccepted, setCertAccepted] = useState(localStorage.getItem('cert_accepted') === 'true')
   const [patients, setPatients] = useState([])
   const [lastSynced, setLastSynced] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -134,6 +135,63 @@ export default function CommanderDashboard() {
 
   return (
     <div className="commander-dashboard" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {!certAccepted && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: '#0a0c0f',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          gap: '20px',
+          padding: '32px'
+        }}>
+          <div style={{ fontSize: '48px' }}>🔐</div>
+          <h2 style={{ color: 'white', fontSize: '24px', textAlign: 'center' }}>
+            One-time security setup needed
+          </h2>
+          <p style={{ color: '#888', textAlign: 'center', maxWidth: '400px' }}>
+            Your browser needs to authorize the local server certificate before the commander can connect.
+          </p>
+          <button
+            onClick={() => {
+              window.open('https://' + window.location.hostname + ':3000/health', '_blank')
+            }}
+            style={{
+              padding: '16px 32px',
+              background: '#ff3b3b',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Tap here to authorize →
+          </button>
+          <button
+            onClick={() => {
+              localStorage.setItem('cert_accepted', 'true')
+              setCertAccepted(true)
+            }}
+            style={{
+              padding: '16px 32px',
+              background: 'transparent',
+              color: '#888',
+              border: '1px solid #333',
+              borderRadius: '8px',
+              fontSize: '16px',
+              cursor: 'pointer'
+            }}
+          >
+            I've authorized it — continue
+          </button>
+        </div>
+      )}
 
       {/* ── Header ── */}
       <header className="commander-header" style={{ flexShrink: 0 }}>
