@@ -10,7 +10,12 @@ export function AIProvider({ children }) {
     let mounted = true
     
     const checkConnection = async () => {
-      const url = localStorage.getItem('ollama_url') || window.location.origin + '/ollama-proxy'
+      // On localhost: connect directly to Ollama. On a network IP: use Vite proxy to avoid Safari mixed-content.
+      // NOTE: /ollama-proxy only works in dev mode (npm run dev).
+      const defaultUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:11434'
+        : window.location.origin + '/ollama-proxy'
+      const url = localStorage.getItem('ollama_url') || defaultUrl
       try {
         const response = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) })
         if (mounted) {

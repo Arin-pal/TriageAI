@@ -14,8 +14,12 @@ export default function Settings() {
   const [patientCount, setPatientCount] = useState(0)
   const [storageUsage, setStorageUsage] = useState('0 KB')
   const [userMode, setUserMode] = useState(localStorage.getItem('user_mode') || 'worker')
-  const [laptopIp, setLaptopIp] = useState(localStorage.getItem('laptop_ip') || '')
-  const [ollamaUrl, setOllamaUrl] = useState(localStorage.getItem('ollama_url') || window.location.origin + '/ollama-proxy')
+  // On localhost: connect directly to Ollama. On a network IP: use Vite proxy to avoid Safari mixed-content.
+  // NOTE: /ollama-proxy only works in dev mode (npm run dev).
+  const defaultOllamaUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:11434'
+    : window.location.origin + '/ollama-proxy'
+  const [ollamaUrl, setOllamaUrl] = useState(localStorage.getItem('ollama_url') || defaultOllamaUrl)
   const [aiConnStatus, setAiConnStatus] = useState('idle') // idle | testing | success | fail
   const [clickCount, setClickCount] = useState(0)
   const [demoMode, setDemoMode] = useState(localStorage.getItem('demo_mode') === 'true')
@@ -42,11 +46,6 @@ export default function Settings() {
     localStorage.setItem('app_language', val)
   }
 
-  const handleIpChange = (e) => {
-    setLaptopIp(e.target.value)
-    localStorage.setItem('laptop_ip', e.target.value)
-  }
-
   const handleOllamaUrlChange = (e) => {
     setOllamaUrl(e.target.value)
     localStorage.setItem('ollama_url', e.target.value)
@@ -56,7 +55,10 @@ export default function Settings() {
   const handleTestOllama = async () => {
     setAiConnStatus('testing')
     try {
-      const url = ollamaUrl.trim() || window.location.origin + '/ollama-proxy'
+      const fallback = window.location.hostname === 'localhost'
+        ? 'http://localhost:11434'
+        : window.location.origin + '/ollama-proxy'
+      const url = ollamaUrl.trim() || fallback
       const response = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(5000) })
       setAiConnStatus(response.ok ? 'success' : 'fail')
     } catch {
@@ -64,11 +66,11 @@ export default function Settings() {
     }
   }
 
-  const handleVersionClick = () => {
+  const handleVersionClick = async () => {
     if (clickCount >= 4) {
       setDemoMode(true)
       localStorage.setItem('demo_mode', 'true')
-      
+
       // Inject 6 fake patients near Mumbai (Gateway of India area)
       const fakePatients = [
         { id: crypto.randomUUID(), color: 'RED', action: 'Immediate tourniquet', reasoning: 'Severe bleeding', transcript: 'Bleeding heavily from the leg', timestamp: Date.now() - 1000 * 60 * 5, lat: 18.9220, lng: 72.8346, mode: 'ai' },
@@ -78,9 +80,25 @@ export default function Settings() {
         { id: crypto.randomUUID(), color: 'RED', action: 'Airway management immediately', reasoning: 'Inadequate respiration rate', transcript: 'Gasping for air, cyanotic', timestamp: Date.now() - 1000 * 60 * 90, lat: 18.9210, lng: 72.8330, mode: 'ai' },
         { id: crypto.randomUUID(), color: 'GREEN', action: 'Provide water and rest', reasoning: 'Fatigued but ambulatory', transcript: 'I am so tired and thirsty', timestamp: Date.now() - 1000 * 60 * 120, lat: 18.9240, lng: 72.8360, mode: 'manual' }
       ]
+
+      // Write to localStorage so phone-local views work immediately
       const existing = JSON.parse(localStorage.getItem('triage_patients') || '[]')
       localStorage.setItem('triage_patients', JSON.stringify([...fakePatients, ...existing]))
-      
+
+      // Also POST to the Express server so demo patients appear on the Commander map
+      const hostname = window.location.hostname
+      for (const patient of fakePatients) {
+        try {
+          await fetch(`https://${hostname}:3000/patients`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patient)
+          })
+        } catch (e) {
+          // silently fail if server is unreachable
+        }
+      }
+
       alert('Demo Mode Unlocked! Fake data loaded.')
       setClickCount(0)
       window.location.reload()
@@ -172,7 +190,7 @@ export default function Settings() {
               onChange={handleOllamaUrlChange}
             />
             <p className="settings-desc" style={{ marginTop: '6px', fontSize: '0.8rem' }}>
-              Leave this as the default auto-detected proxy URL.
+              Default is auto-detected. Only change if Ollama runs on a different machine.
             </p>
           </div>
           {aiConnStatus === 'success' && (
@@ -225,23 +243,6 @@ export default function Settings() {
           >
             {isTesting ? 'Analyzing…' : 'Test Full Flow (AI Scenario)'}
           </button>
-        </section>
-
-        {/* 5. Laptop Sync */}
-        <section className="settings-section">
-          <h2>Laptop Sync</h2>
-          <p className="settings-desc">Enter the local IP address of the Commander laptop to automatically sync data over the local network.</p>
-          <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: 0, border: 'none', marginTop: '12px' }}>
-            <span style={{ marginBottom: '8px' }}>Laptop IP Address:</span>
-            <input 
-              type="text" 
-              className="settings-select" 
-              style={{ fontFamily: 'monospace' }}
-              placeholder="e.g. 192.168.1.100" 
-              value={laptopIp} 
-              onChange={handleIpChange}
-            />
-          </div>
         </section>
 
         {/* 6. About */}

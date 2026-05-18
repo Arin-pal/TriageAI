@@ -9,13 +9,13 @@ const DEMO_SCENES = [
     screen: 'splash'
   },
   {
-    title: 'On-Device AI Setup',
-    caption: 'On first launch, it downloads the 800MB quantized Gemma E2B model directly to browser Cache Storage.',
+    title: 'AI Setup',
+    caption: 'On first launch, the app connects to Ollama running Gemma 4 E4B on the paramedic laptop over the local WiFi hotspot.',
     screen: 'setup'
   },
   {
-    title: 'Dual Interface',
-    caption: 'Supports both professional first responders and civilians who want to report injuries or volunteer.',
+    title: 'Responder Interface',
+    caption: 'Built for trained responders. Choose Responder mode to begin triage, or Commander mode to monitor the incident.',
     screen: 'mode'
   },
   {
@@ -24,8 +24,8 @@ const DEMO_SCENES = [
     screen: 'triage'
   },
   {
-    title: 'Local Inference',
-    caption: 'The MediaPipe Engine runs inference locally. Strict parameters force it to adhere to the START protocol.',
+    title: 'Gemma 4 Inference',
+    caption: 'Ollama runs Gemma 4 E4B on the laptop — no cloud, no internet. Strict JSON output forces adherence to the START protocol.',
     screen: 'analyze'
   },
   {
@@ -91,10 +91,12 @@ export default function DemoWalkthrough() {
         {scene.screen === 'mode' && (
           <div style={{ padding: '24px', backgroundColor: '#0a0a0a', height: '100%', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center' }}>
             <div style={{ background: '#1a1a1a', padding: '32px', borderRadius: '12px', border: '1px solid #CC0000' }}>
-              <h2 style={{ color: '#CC0000' }}>I am a Responder</h2>
+              <h2 style={{ color: '#CC0000' }}>🩺 I am a Responder</h2>
+              <p style={{ color: '#aaa', marginTop: '8px', fontSize: '0.9rem' }}>Trained medical worker</p>
             </div>
             <div style={{ background: '#1a1a1a', padding: '32px', borderRadius: '12px', border: '1px solid #0055CC' }}>
-              <h2 style={{ color: '#0055CC' }}>I am a Civilian</h2>
+              <h2 style={{ color: '#0055CC' }}>📡 Commander View</h2>
+              <p style={{ color: '#aaa', marginTop: '8px', fontSize: '0.9rem' }}>Monitor operations</p>
             </div>
           </div>
         )}

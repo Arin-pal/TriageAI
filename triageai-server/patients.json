@@ -1,55 +1,62 @@
 [
   {
-    "id": "test1",
+    "id": "926fddd1-90a4-4ad8-8c1d-4ab30856b4f5",
+    "timestamp": 1779100155736,
+    "lat": 21.0951456,
+    "lng": 79.0699782,
+    "transcript": "    mike  testing mike 123 ",
+    "mode": "ai",
+    "color": "GREEN",
+    "action": "No immediate action needed",
+    "reasoning": "Patient is talking and appears ambulatory, indicating minor injuries or no injury."
+  },
+  {
+    "id": "demo1",
     "color": "RED",
     "mode": "ai",
-    "transcript": "Test patient",
-    "lat": 21.0951,
-    "lng": 79.07,
-    "timestamp": "2026-05-12T22:00:00Z"
+    "transcript": "Male, 40s, severe chest injury, not breathing well",
+    "lat": 21.0955,
+    "lng": 79.0705,
+    "timestamp": "2026-05-18T10:00:00Z"
   },
   {
-    "id": "8d3b98be-12dc-46af-bcdc-06606d4b445b",
-    "timestamp": 1778619064846,
-    "lat": 21.0951456,
-    "lng": 79.0699782,
-    "transcript": "  just just just checking just checking just checking just checking mike just checking mike just checking mike 123 ",
+    "id": "demo2",
+    "color": "YELLOW",
     "mode": "ai",
-    "color": "GREEN",
-    "action": "Monitor and reassure",
-    "reasoning": "The patient is conscious, talking, and appears to be calling out or testing communication, suggesting they are ambulatory and stable."
+    "transcript": "Female, 30s, broken arm, conscious and stable",
+    "lat": 21.0948,
+    "lng": 79.0698,
+    "timestamp": "2026-05-18T10:01:00Z"
   },
   {
-    "id": "253c9417-984f-4200-bbb7-82cf770fc1a0",
-    "timestamp": 1778619448788,
-    "lat": 21.0951456,
-    "lng": 79.0699782,
-    "transcript": " adult adult adult adult adult breathing adult breathing      bleeding bleeding through bleeding through bleeding through head ",
+    "id": "demo3",
+    "color": "GREEN",
+    "mode": "ai",
+    "transcript": "Teen, walking, minor cuts on legs",
+    "lat": 21.0952,
+    "lng": 79.0702,
+    "timestamp": "2026-05-18T10:02:00Z"
+  },
+  {
+    "id": "b67db851-b875-484a-9c4d-147d69ef2095",
+    "timestamp": 1779100699330,
+    "lat": 21.0947883,
+    "lng": 79.068567,
+    "transcript": "      severe severe bleeding severe bleeding through severe bleeding through severe bleeding through severe bleeding through leg severe bleeding through leg ",
     "mode": "ai",
     "color": "RED",
-    "action": "Immediate intervention required for severe bleeding and breathing issues.",
-    "reasoning": "The description indicates severe bleeding from the head and breathing issues, suggesting immediate life-threatening concerns requiring rapid intervention."
+    "action": "Control severe bleeding immediately",
+    "reasoning": "Severe bleeding from the leg indicates immediate life-threatening hemorrhage requiring intervention, classifying as RED."
   },
   {
-    "id": "0833858a-f88e-4d57-ae79-faa5f914debc",
-    "timestamp": 1778921823721,
+    "id": "758ce2b8-e1f1-4c3d-910c-e45b48600ff1",
+    "timestamp": 1779100802981,
     "lat": 21.0951456,
     "lng": 79.0699782,
-    "transcript": "     mike mike mike testing mike testing 123 mike testing 123 ",
+    "transcript": "   no no pulse ",
     "mode": "ai",
-    "color": "GREEN",
-    "action": "Monitor and reassure",
-    "reasoning": "The patient is speaking in a coherent, albeit nonsensical, manner, indicating consciousness and ability to communicate, suggesting a low level of immediate threat."
-  },
-  {
-    "id": "bdc7d7d6-8679-4128-8ea8-a2e3ca21eb21",
-    "timestamp": 1778927406629,
-    "lat": 21.0951456,
-    "lng": 79.0699782,
-    "transcript": " final final final check final check     think think think think everything is fine think think think think everything is fine just think everything is fine just think everything is fine just confirm think everything is fine just confirming ",
-    "mode": "ai",
-    "color": "GREEN",
-    "action": "Monitor and reassure",
-    "reasoning": "The patient is verbally confirming that everything is fine and is conscious, indicating no immediate life threat."
+    "color": "BLACK",
+    "action": "No pulse, treat as deceased.",
+    "reasoning": "No pulse indicates no circulation and is classified as unsurvivable in START triage."
   }
 ]

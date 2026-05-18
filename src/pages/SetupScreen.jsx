@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './SetupScreen.css'
 
-const DEFAULT_OLLAMA_URL = window.location.origin + '/ollama-proxy'
+// On localhost: connect directly to Ollama (no proxy needed).
+// On a network IP: use the Vite proxy to avoid Safari mixed-content blocks.
+// NOTE: /ollama-proxy only works in dev mode (npm run dev).
+const DEFAULT_OLLAMA_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:11434'
+  : window.location.origin + '/ollama-proxy'
 
 export default function SetupScreen() {
   const navigate = useNavigate()
-  const [isStandalone, setIsStandalone] = useState(false)
   const [ollamaUrl, setOllamaUrl] = useState(
     localStorage.getItem('ollama_url') || DEFAULT_OLLAMA_URL
   )
@@ -19,14 +23,6 @@ export default function SetupScreen() {
       navigate('/', { replace: true })
     }
   }, [navigate])
-
-  useEffect(() => {
-    const mql = window.matchMedia('(display-mode: standalone)')
-    setIsStandalone(mql.matches)
-    const handler = (e) => setIsStandalone(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [])
 
   const handleUrlChange = (e) => {
     const val = e.target.value
@@ -62,19 +58,29 @@ export default function SetupScreen() {
     <main className="setup-page page-enter">
       <header className="setup-header">
         <h1 className="setup-title">Initial Setup</h1>
-        <p className="setup-subtitle">Follow these steps to activate AI triage.</p>
+        <p className="setup-subtitle">Connect to the AI to activate triage.</p>
       </header>
 
       <section className="setup-steps">
-        {/* Step 1: Install */}
-        <div className={`setup-step card ${isStandalone ? 'step-complete' : ''}`}>
+        {/* Step 1: Accept Security Certificate */}
+        <div className="setup-step card">
           <div className="step-header">
             <span className="step-number">1</span>
-            <h2>Install App</h2>
-            {isStandalone && <span className="step-check">✅</span>}
+            <h2>Accept Security Certificate</h2>
           </div>
           <p className="step-desc">
-            Tap your browser menu → <strong>Add to Home Screen</strong>. This ensures the app works perfectly offline.
+            Before connecting, you must accept the local security certificate once.
+          </p>
+          <div className="setup-btn-row">
+            <button
+              className="btn btn-outline btn-full"
+              onClick={() => window.open(`https://${window.location.hostname}:3000/health`, '_blank')}
+            >
+              Accept Certificate
+            </button>
+          </div>
+          <p className="setup-url-hint" style={{ marginTop: '12px' }}>
+            In the new tab, tap <strong>Advanced → Proceed</strong>. Then come back here.
           </p>
         </div>
 
@@ -103,7 +109,7 @@ export default function SetupScreen() {
               autoCapitalize="none"
             />
             <p className="setup-url-hint">
-              Leave this as the default auto-detected proxy URL.
+              Default is auto-detected. Only change if Ollama runs on a different machine.
             </p>
           </div>
 

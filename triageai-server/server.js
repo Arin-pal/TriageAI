@@ -132,9 +132,17 @@ app.get('/export/csv', (req, res) => {
   res.send(csv)
 })
 
-const httpsOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
+let httpsOptions
+try {
+  httpsOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
+  }
+} catch (e) {
+  console.error('❌ Certificate files missing!')
+  console.error('Run this command in the triageai-server folder:')
+  console.error('openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=triageai" -addext "subjectAltName=IP:0.0.0.0,IP:127.0.0.1,DNS:localhost"')
+  process.exit(1)
 }
 
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {

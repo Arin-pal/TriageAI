@@ -18,17 +18,17 @@ START triage protocol.
 
 Patient description: ${transcript}
 
-Classify into exactly one category:
-GREEN - Patient is walking, talking, and conscious with minor or no injuries. Can help themselves.
-YELLOW - Patient is injured but stable. Breathing normally, has a pulse, can follow commands. Not immediate danger.
-RED - Patient has life threatening injuries but CAN survive with immediate treatment. Unconscious, not breathing normally, severe bleeding, no pulse.
-BLACK - Patient is deceased or has unsurvivable injuries. Do not use resources.
+Classify into exactly one category using START triage protocol:
+GREEN - Walking wounded. Minor injuries, ambulatory, can follow commands. Breathing normally, no life threat.
+YELLOW - Serious but stable. Injured and cannot walk but breathing normally (rate 8-30), pulse present, capillary refill ≤2s. Can wait up to 1 hour.
+RED - Life-threatening but SURVIVABLE with immediate intervention. Breathing only after airway repositioning, respiratory rate >30 or <8, capillary refill >2 seconds, or altered mental status. Has a pulse.
+BLACK - Deceased or unsurvivable. No breathing after airway repositioning, no pulse, or injuries incompatible with life. Do not use resources.
 
 Important rules:
-- If patient says they are fine or okay → GREEN
-- If patient is walking and talking → GREEN  
-- If patient has minor cuts or bruises → GREEN
-- Only use RED for genuinely life threatening situations
+- If patient is walking and talking → GREEN
+- If patient says they are fine or has minor cuts/bruises → GREEN
+- 'No pulse' or 'pulseless' → BLACK (never RED)
+- Only use RED for patients who have a pulse but need immediate airway or bleeding intervention
 - When unsure between RED and YELLOW → choose YELLOW
 - IMPORTANT: The 'action' and 'reasoning' fields must be translated to ${langName}. The 'color' must remain in English.
 
@@ -52,12 +52,18 @@ No explanation, no markdown, no reasoning chain. JSON only:`;
   }
 
   try {
-    const ollamaUrl = localStorage.getItem('ollama_url') || window.location.origin + '/ollama-proxy';
+    // On localhost: connect directly to Ollama. On a network IP: use Vite proxy to avoid Safari mixed-content.
+    // NOTE: /ollama-proxy only works in dev mode (npm run dev).
+    const defaultUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:11434'
+      : window.location.origin + '/ollama-proxy'
+    const ollamaUrl = localStorage.getItem('ollama_url') || defaultUrl;
 
     const response = await fetch(`${ollamaUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(45000)
     });
 
     if (!response.ok) throw new Error('Ollama request failed');
@@ -79,11 +85,14 @@ No explanation, no markdown, no reasoning chain. JSON only:`;
     return result;
 
   } catch (error) {
+    const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError'
     console.error('Ollama error:', error);
     return {
       color: 'ERROR',
-      action: 'Use manual protocol now',
-      reasoning: 'AI unavailable: ' + error.message,
+      action: isTimeout ? 'AI timeout — use manual protocol' : 'Use manual protocol now',
+      reasoning: isTimeout
+        ? 'Ollama did not respond in 45 seconds'
+        : 'AI unavailable: ' + error.message,
       confidence: 'low'
     };
   }

@@ -6,9 +6,6 @@ import TriageScreen from './pages/TriageScreen'
 import ResultScreen from './pages/ResultScreen'
 import ManualTriage from './pages/ManualTriage'
 import PatientList from './pages/PatientList'
-import CivilianHome from './pages/CivilianHome'
-import ReportInjured from './pages/ReportInjured'
-import OfferHelp from './pages/OfferHelp'
 import SetupScreen from './pages/SetupScreen'
 import Settings from './pages/Settings'
 import DemoWalkthrough from './pages/DemoWalkthrough'
@@ -109,9 +106,6 @@ export default function App() {
         <Route path="/worker/result" element={<ResultScreen />} />
         <Route path="/worker/manual" element={<ManualTriage />} />
         <Route path="/worker/patients" element={<PatientList />} />
-        <Route path="/civilian" element={<CivilianHome />} />
-        <Route path="/civilian/report" element={<ReportInjured />} />
-        <Route path="/civilian/help" element={<OfferHelp />} />
         <Route path="/setup" element={<SetupScreen />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/demo" element={<DemoWalkthrough />} />

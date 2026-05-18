@@ -16,8 +16,6 @@ export default function ModeSelect() {
     navigate(path)
   }
 
-  const isLaptop = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-
   return (
     <main className="mode-select-page page-enter">
       <header className="mode-select-header">
@@ -25,8 +23,8 @@ export default function ModeSelect() {
       </header>
 
       <section className="mode-cards-container">
-        <button 
-          className="mode-card responder-card" 
+        <button
+          className="mode-card responder-card"
           onClick={() => handleSelectMode('responder', '/worker')}
           aria-label="I am a Responder. Trained medical worker."
         >
@@ -35,27 +33,15 @@ export default function ModeSelect() {
           <p className="card-subtitle">Trained medical worker</p>
         </button>
 
-        <button 
-          className="mode-card civilian-card" 
-          onClick={() => handleSelectMode('civilian', '/civilian')}
-          aria-label="I want to help. Civilian volunteer."
+        <button
+          className="mode-card commander-card"
+          onClick={() => handleSelectMode('commander', '/commander')}
+          aria-label="Commander View. Monitor operations."
         >
-          <span className="card-icon" aria-hidden="true">🤝</span>
-          <h2 className="card-title">I want to help</h2>
-          <p className="card-subtitle">Civilian volunteer</p>
+          <span className="card-icon" aria-hidden="true">📡</span>
+          <h2 className="card-title">Commander View</h2>
+          <p className="card-subtitle">Monitor operations</p>
         </button>
-
-        {isLaptop && (
-          <button 
-            className="mode-card commander-card" 
-            onClick={() => handleSelectMode('commander', '/commander')}
-            aria-label="Incident Commander. Monitor operations."
-          >
-            <span className="card-icon" aria-hidden="true">📡</span>
-            <h2 className="card-title">Incident Commander</h2>
-            <p className="card-subtitle">Monitor operations</p>
-          </button>
-        )}
       </section>
 
       <footer className="mode-select-footer">

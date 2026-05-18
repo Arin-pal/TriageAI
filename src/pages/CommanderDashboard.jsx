@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -11,21 +11,26 @@ const COLOR_HEX = {
   BLACK:  '#444444',
 }
 
-// Auto-fits the map viewport to the bounding box of all patients with GPS
+// Auto-fits the map viewport once on first load when patient GPS data arrives.
+// hasFittedRef prevents the map snapping back every 5-second poll.
 function FitBounds({ patients }) {
   const map = useMap()
+  const hasFittedRef = useRef(false)
+
   useEffect(() => {
+    if (hasFittedRef.current) return
     const valid = patients.filter(p => p.lat && p.lng)
     if (valid.length > 0) {
       map.fitBounds(valid.map(p => [p.lat, p.lng]), { padding: [50, 50], maxZoom: 17 })
+      hasFittedRef.current = true
     }
   }, [patients, map])
+
   return null
 }
 
 export default function CommanderDashboard() {
   const [patients, setPatients] = useState([])
-  const [volunteers, setVolunteers] = useState([])
   const [lastSynced, setLastSynced] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState(null)
@@ -35,45 +40,21 @@ export default function CommanderDashboard() {
   // window.location.hostname gives the correct IP on any device, zero config required.
   const SERVER_URL = `https://${window.location.hostname}:3000`
 
-  const assignVolunteer = async (patientId, volunteerId) => {
-    try {
-      await fetch(`${SERVER_URL}/patients/${patientId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignedVolunteerId: volunteerId }),
-      })
-      fetchData()
-    } catch (e) {
-      console.error('Failed to assign volunteer:', e)
-    }
-  }
-
   const fetchData = async () => {
     setIsRefreshing(true)
     setError(null)
     try {
-      const [pRes, vRes] = await Promise.all([
-        fetch(`${SERVER_URL}/patients`),
-        fetch(`${SERVER_URL}/volunteers`)
-      ])
-
-      if (!pRes.ok || !vRes.ok) throw new Error('Failed to fetch from laptop server')
-
-      const pData = await pRes.json()
-      const vData = await vRes.json()
-
-      setPatients(pData)
-      setVolunteers(vData)
+      const res = await fetch(`${SERVER_URL}/patients`)
+      if (!res.ok) throw new Error('Failed to fetch from laptop server')
+      const data = await res.json()
+      setPatients(data)
       setLastSynced(new Date())
     } catch (err) {
       console.error('Commander sync failed:', err)
       setError('Cannot connect to Laptop Server. Is it running?')
-      
       // Fallback to local storage if server is down (for testing on same device)
       const localPatients = JSON.parse(localStorage.getItem('triage_patients') || '[]')
-      const localVolunteers = JSON.parse(localStorage.getItem('volunteers') || '[]')
       if (localPatients.length > 0) setPatients(localPatients)
-      if (localVolunteers.length > 0) setVolunteers(localVolunteers)
     } finally {
       setIsRefreshing(false)
     }
@@ -92,9 +73,7 @@ export default function CommanderDashboard() {
     try {
       await fetch(`${SERVER_URL}/patients`, { method: 'DELETE' })
       localStorage.removeItem('triage_patients')
-      localStorage.removeItem('volunteers')
       setPatients([])
-      setVolunteers([])
     } catch (err) {
       alert('Failed to clear server data.')
     }
@@ -119,7 +98,6 @@ export default function CommanderDashboard() {
           <div className="stat-box yellow"><span>YEL</span> {counts.YELLOW}</div>
           <div className="stat-box green"><span>GRN</span> {counts.GREEN}</div>
           <div className="stat-box black"><span>BLK</span> {counts.BLACK}</div>
-          <div className="stat-box volunteers"><span>VOL</span> {volunteers.length}</div>
         </div>
 
         <div className="header-actions">
@@ -187,7 +165,6 @@ export default function CommanderDashboard() {
 
         <section className="dashboard-section">
           <div className="section-header">
-            <h2>Incident Map & Patients</h2>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <button
                 onClick={() => {
@@ -223,59 +200,15 @@ export default function CommanderDashboard() {
                   <h3 className="card-title">{p.action || 'Assessment Pending'}</h3>
                   <p className="card-reason">{p.reasoning}</p>
                   <div className="card-footer">
-                    <span className="location">📍 {p.lat?.toFixed(4)}, {p.lng?.toFixed(4)}</span>
+                    <span className="location">📍 {p.lat != null && p.lng != null ? p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) : 'No GPS'}</span>
                     <span className="source">📡 Source: {p.mode?.toUpperCase()}</span>
                   </div>
-                  <select
-                    value={p.assignedVolunteerId || ''}
-                    onChange={(e) => assignVolunteer(p.id, e.target.value)}
-                    style={{
-                      width: '100%',
-                      marginTop: '10px',
-                      background: '#111',
-                      color: 'white',
-                      border: '1px solid #444',
-                      padding: '8px',
-                      borderRadius: '6px',
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <option value="">— Assign volunteer —</option>
-                    {volunteers.map(v => (
-                      <option key={v.id} value={v.id}>
-                        Vol-{v.id?.substring(0, 4)} ({(v.skills || []).join(', ') || 'No skills listed'})
-                      </option>
-                    ))}
-                  </select>
                 </div>
               ))
             )}
           </div>
         </section>
 
-        <section className="dashboard-section volunteers-section">
-          <div className="section-header">
-            <h2>Active Volunteers</h2>
-          </div>
-          <div className="volunteers-list">
-            {volunteers.length === 0 ? (
-              <div className="empty-state">No volunteers checked in.</div>
-            ) : (
-              volunteers.map(v => (
-                <div key={v.id} className="volunteer-row">
-                  <div className="vol-info">
-                    <span className="vol-id">#{v.id?.substring(0,4)}</span>
-                    <div className="vol-skills">
-                      {(v.skills || []).map(s => <span key={s} className="skill-chip">{s}</span>)}
-                    </div>
-                  </div>
-                  <div className="vol-loc">📍 {v.lat?.toFixed(4)}, {v.lng?.toFixed(4)}</div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
       </main>
     </div>
   )

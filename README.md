@@ -16,7 +16,7 @@ Phone (PWA)                         Laptop
 │  Camera + Mic          │  WiFi    │  Ollama  (gemma4:e4b)         │
 │  Speech-to-Text        │ ──────▶  │  Express server  :3000        │
 │  analyzePatient()      │ ◀──────  │  patients.json               │
-│  Result + TTS          │          │  commander.html  (Leaflet map)│
+│  Result + TTS          │          │  React /commander (Leaflet)  │
 └───────────────────────┘           └──────────────────────────────┘
 ```
 
@@ -38,8 +38,10 @@ ollama pull gemma4:e4b
 cd triageai-server
 npm install
 node server.js
-# Prints the local IP address on startup, e.g. http://192.168.1.10:3000
+# Prints the local IP on startup, e.g. https://192.168.1.10:3000
 ```
+
+> **Certificate note:** The backend uses a self-signed certificate (`key.pem` / `cert.pem` in `triageai-server/`). The first time any device opens `https://<laptop-ip>:3000/health` in a browser, click through the certificate warning once — subsequent requests from that device will succeed silently.
 
 ### 2 — Frontend (development)
 
@@ -52,15 +54,15 @@ npm run dev
 ### 3 — Connect phones
 
 1. Join the laptop's WiFi hotspot on each phone
-2. Open `https://<laptop-ip>:5174` in Chrome
+2. Open `https://<laptop-ip>:5174` in Chrome (accept the Vite dev-cert warning once)
 3. Go to **Settings → Ollama Server URL** and set `http://<laptop-ip>:11434`
 4. Tap **Test Connection** — should show "Gemma AI Ready"
 
+> The app derives the laptop IP automatically from the page URL — no separate "Laptop IP" field needs to be configured.
+
 ### 4 — Commander dashboard
 
-Open `http://<laptop-ip>:3000/commander.html` on the laptop or any device on the same network.
-
-The React app also has a commander view at `/commander` with an integrated Leaflet map.
+Open `https://<laptop-ip>:5174/commander` in any browser on the same network (accept the cert warning once). The commander view includes a live Leaflet map and CSV export.
 
 ---
 
@@ -71,7 +73,7 @@ npm run build
 # Output in dist/ — serve over HTTPS (required for camera/mic)
 ```
 
-> **Note:** The Vite dev proxy (`/ollama-proxy`) is only available in dev mode. In production, phones must point directly to `http://<laptop-ip>:11434` in Settings.
+> **Note:** The Vite dev proxy (`/ollama-proxy`) is only available in dev mode. In production builds, phones must point directly to `http://<laptop-ip>:11434` in **Settings → Ollama Server URL**.
 
 ---
 
@@ -90,7 +92,6 @@ npm run build
 | **Offline PWA** | Installs to home screen, works without internet after setup |
 | **Multilingual TTS** | English, Hindi, Arabic, Turkish, French |
 | **Demo mode** | Hidden unlock (tap version 5×) injects sample patients |
-| **Volunteer check-in** | Civilians can register skills and location |
 
 ---
 
@@ -107,10 +108,11 @@ npm run build
 │   │   └── Settings.jsx          # Ollama URL, language, laptop IP
 │   └── utils/
 │       ├── patientStore.js       # localStorage + server sync
-│       └── syncManager.js        # pushPatientToLaptop (derives IP from Ollama URL)
+│       └── syncManager.js        # pushPatientToLaptop (derives laptop IP from window.location.hostname)
 ├── triageai-server/
-│   ├── server.js                 # Express: /patients /volunteers /health /export/csv
-│   └── public/commander.html     # Standalone Leaflet commander dashboard
+│   ├── server.js                 # Express: /patients /volunteers /health /export/csv /patients/:id
+│   ├── key.pem / cert.pem        # Self-signed TLS certificate (HTTPS on :3000)
+│   └── patients.json             # Persistent patient store (JSON file)
 └── public/                       # PWA assets
 ```
 

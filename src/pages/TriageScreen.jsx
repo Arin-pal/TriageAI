@@ -28,6 +28,7 @@ export default function TriageScreen() {
   
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzeSeconds, setAnalyzeSeconds] = useState(0)
+  const analyzeTimerRef = useRef(null)
 
   const isDemoMode = localStorage.getItem('demo_mode') === 'true'
 
@@ -155,6 +156,17 @@ export default function TriageScreen() {
     }
   }
 
+  const cancelAnalysis = () => {
+    if (analyzeTimerRef.current) {
+      clearInterval(analyzeTimerRef.current)
+      analyzeTimerRef.current = null
+    }
+    setIsAnalyzing(false)
+    setAnalyzeSeconds(0)
+    // The AbortSignal.timeout in triageEngine.js will let the in-flight fetch
+    // resolve or expire on its own — we just stop showing the overlay.
+  }
+
   const handleAnalyze = async () => {
     if (!isModelLoaded) {
       navigate('/worker/result', { state: { manualMode: true, transcript } })
@@ -164,7 +176,7 @@ export default function TriageScreen() {
     setIsAnalyzing(true)
     setAnalyzeSeconds(0)
 
-    const timer = setInterval(() => {
+    analyzeTimerRef.current = setInterval(() => {
       setAnalyzeSeconds(s => s + 1)
     }, 1000)
 
@@ -172,15 +184,20 @@ export default function TriageScreen() {
     const imageBase64 = capturedImage
       ? capturedImage.replace(/^data:image\/\w+;base64,/, '')
       : null
-    console.log('[TriageAI] Sending to analyzePatient — transcript length:', transcript.length, '| image attached:', !!imageBase64)
 
     try {
       const result = await analyzePatient(transcript, imageBase64)
-      clearInterval(timer)
+      clearInterval(analyzeTimerRef.current)
+      analyzeTimerRef.current = null
+      if (!result || result.color === 'ERROR') {
+        navigate('/worker/result', { state: { manualMode: true, transcript } })
+        return
+      }
       navigate('/worker/result', { state: { result, transcript } })
     } catch (err) {
       console.error('AI Analysis threw an error:', err)
-      clearInterval(timer)
+      clearInterval(analyzeTimerRef.current)
+      analyzeTimerRef.current = null
       navigate('/worker/result', { state: { manualMode: true, transcript } })
     }
   }
@@ -299,8 +316,20 @@ export default function TriageScreen() {
 
           {/* Captured image thumbnail */}
           {capturedImage && (
-            <div className="thumbnail-container">
+            <div className="thumbnail-container" style={{ position: 'relative' }}>
               <img src={capturedImage} alt="Captured patient" className="thumbnail-img" />
+              <div style={{
+                position: 'absolute',
+                bottom: '4px',
+                left: '4px',
+                background: 'rgba(0,0,0,0.7)',
+                color: 'white',
+                fontSize: '10px',
+                padding: '2px 6px',
+                borderRadius: '4px',
+              }}>
+                🤖 AI vision
+              </div>
             </div>
           )}
 
@@ -384,6 +413,21 @@ export default function TriageScreen() {
             <div className="analysis-pulse-circle"></div>
             <p className="analysis-text">Analyzing patient...</p>
             <p className="analysis-timer">{analyzeSeconds}s</p>
+            <button
+              onClick={cancelAnalysis}
+              style={{
+                marginTop: '24px',
+                padding: '12px 32px',
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.7)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                fontSize: '16px',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
           </div>
         )}
       </main>
